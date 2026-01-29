@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Questionário Psicossocial</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='psicossocial.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Questionário de Avaliação Psicossocial</h1>
+
+    <p class="subtitulo">
+        Avalie as condições psicossociais do seu trabalho.  
+        As respostas são <strong>anônimas e confidenciais</strong>.
+    </p>
+
+    <form method="post" action="">
+
+        <!-- LEGENDA -->
+        <div class="legenda">
+            <span>1 - Discordo totalmente</span>
+            <span>2 - Discordo</span>
+            <span>3 - Neutro</span>
+            <span>4 - Concordo</span>
+            <span>5 - Concordo totalmente</span>
+        </div>
+
+        <!-- BLOCO 1 -->
+        <h2>Carga de Trabalho</h2>
+
+        <div class="pergunta">
+            <label>1. Consigo realizar minhas atividades dentro do horário normal.</label>
+            <div class="escala">
+                <input type="radio" name="q1" value="1" required>
+                <input type="radio" name="q1" value="2">
+                <input type="radio" name="q1" value="3">
+                <input type="radio" name="q1" value="4">
+                <input type="radio" name="q1" value="5">
+            </div>
+        </div>
+
+        <div class="pergunta">
+            <label>2. O volume de trabalho é compatível com minha função.</label>
+            <div class="escala">
+                <input type="radio" name="q2" value="1" required>
+                <input type="radio" name="q2" value="2">
+                <input type="radio" name="q2" value="3">
+                <input type="radio" name="q2" value="4">
+                <input type="radio" name="q2" value="5">
+            </div>
+        </div>
+
+        <!-- BLOCO 2 -->
+        <h2>Liderança</h2>
+
+        <div class="pergunta">
+            <label>3. Recebo orientações claras da minha liderança.</label>
+            <div class="escala">
+                <input type="radio" name="q3" value="1" required>
+                <input type="radio" name="q3" value="2">
+                <input type="radio" name="q3" value="3">
+                <input type="radio" name="q3" value="4">
+                <input type="radio" name="q3" value="5">
+            </div>
+        </div>
+
+        <div class="pergunta">
+            <label>4. Sinto-me respeitado(a) pela chefia.</label>
+            <div class="escala">
+                <input type="radio" name="q4" value="1" required>
+                <input type="radio" name="q4" value="2">
+                <input type="radio" name="q4" value="3">
+                <input type="radio" name="q4" value="4">
+                <input type="radio" name="q4" value="5">
+            </div>
+        </div>
+
+        <!-- BLOCO 3 -->
+        <h2>Ambiente e Equilíbrio</h2>
+
+        <div class="pergunta">
+            <label>5. O ambiente de trabalho é saudável.</label>
+            <div class="escala">
+                <input type="radio" name="q5" value="1" required>
+                <input type="radio" name="q5" value="2">
+                <input type="radio" name="q5" value="3">
+                <input type="radio" name="q5" value="4">
+                <input type="radio" name="q5" value="5">
+            </div>
+        </div>
+
+        <div class="pergunta">
+            <label>6. Há cooperação entre colegas.</label>
+            <div class="escala">
+                <input type="radio" name="q6" value="1" required>
+                <input type="radio" name="q6" value="2">
+                <input type="radio" name="q6" value="3">
+                <input type="radio" name="q6" value="4">
+                <input type="radio" name="q6" value="5">
+            </div>
+        </div>
+
+        <div class="pergunta">
+            <label>7. Meu trabalho é reconhecido.</label>
+            <div class="escala">
+                <input type="radio" name="q7" value="1" required>
+                <input type="radio" name="q7" value="2">
+                <input type="radio" name="q7" value="3">
+                <input type="radio" name="q7" value="4">
+                <input type="radio" name="q7" value="5">
+            </div>
+        </div>
+
+        <div class="pergunta">
+            <label>8. Consigo equilibrar trabalho e vida pessoal.</label>
+            <div class="escala">
+                <input type="radio" name="q8" value="1" required>
+                <input type="radio" name="q8" value="2">
+                <input type="radio" name="q8" value="3">
+                <input type="radio" name="q8" value="4">
+                <input type="radio" name="q8" value="5">
+            </div>
+        </div>
+
+        <div class="pergunta">
+            <label>9. O trabalho não afeta negativamente minha saúde mental.</label>
+            <div class="escala">
+                <input type="radio" name="q9" value="1" required>
+                <input type="radio" name="q9" value="2">
+                <input type="radio" name="q9" value="3">
+                <input type="radio" name="q9" value="4">
+                <input type="radio" name="q9" value="5">
+            </div>
+        </div>
+
+        <button type="submit">Enviar Respostas</button>
+
+    </form>
+
+    <p class="rodape">
+        Questionário anônimo – conforme LGPD e NR-01.
+    </p>
+
+</div>
+
+</body>
+</html>

@@ -1,8 +1,7 @@
-from flask import Flask, render_template, request, redirect
 import sqlite3
 from datetime import datetime
+from flask import Flask, render_template, request, redirect
 import matplotlib.pyplot as plt
-import os
 
 app = Flask(__name__)
 
@@ -41,34 +40,37 @@ def criar_banco():
 criar_banco()
 
 # -------------------------
-# CADASTRO DE EMPRESAS (ADMIN)
+# ROTAS BÁSICAS
 # -------------------------
-@app.route("/empresas", methods=["GET", "POST"])
-def empresas():
-    conn = conectar()
-    c = conn.cursor()
+@app.route("/")
+def index():
+    return render_template("questionario.html")
 
+@app.route("/teste", methods=["GET", "POST"])
+def teste():
     if request.method == "POST":
-        nome = request.form["nome"]
-        codigo = request.form["codigo"]
-        c.execute("INSERT INTO empresas (nome, codigo) VALUES (?,?)", (nome, codigo))
-        conn.commit()
-
-    c.execute("SELECT * FROM empresas")
-    empresas = c.fetchall()
-    conn.close()
-
-    return render_template("empresas.html", empresas=empresas)
+        return redirect("/")
+    return "Teste OK"
 
 # -------------------------
-# QUESTIONÁRIO POR EMPRESA
+# QUESTIONÁRIO (SEM CÓDIGO)
+# -------------------------
+@app.route("/questionario")
+def questionario_padrao():
+    return render_template("questionario.html")
+
+# -------------------------
+# QUESTIONÁRIO (COM CÓDIGO DA EMPRESA)
 # -------------------------
 @app.route("/questionario/<codigo_empresa>", methods=["GET", "POST"])
-def questionario(codigo_empresa):
+def questionario_empresa(codigo_empresa):
     conn = conectar()
     c = conn.cursor()
 
-    c.execute("SELECT id, nome FROM empresas WHERE codigo=? AND ativa=1", (codigo_empresa,))
+    c.execute(
+        "SELECT id, nome FROM empresas WHERE codigo=? AND ativa=1",
+        (codigo_empresa,)
+    )
     empresa = c.fetchone()
 
     if not empresa:
@@ -79,10 +81,11 @@ def questionario(codigo_empresa):
     if request.method == "POST":
         for i in range(1, 11):
             resposta = request.form.get(f"q{i}")
-            c.execute("""
-                INSERT INTO respostas (empresa_id, pergunta, resposta, data_resposta)
-                VALUES (?,?,?,?)
-            """, (empresa_id, i, resposta, datetime.now()))
+            if resposta:
+                c.execute("""
+                    INSERT INTO respostas (empresa_id, pergunta, resposta, data_resposta)
+                    VALUES (?,?,?,?)
+                """, (empresa_id, i, resposta, datetime.now()))
         conn.commit()
         conn.close()
         return redirect("/obrigado")
@@ -90,12 +93,31 @@ def questionario(codigo_empresa):
     conn.close()
     return render_template("questionario.html", empresa=nome_empresa)
 
-@app.route("/obrigado")
-def obrigado():
-    return render_template("obrigado.html")
+# -------------------------
+# EMPRESAS
+# -------------------------
+@app.route("/empresas", methods=["GET", "POST"])
+def empresas():
+    conn = conectar()
+    c = conn.cursor()
+
+    if request.method == "POST":
+        nome = request.form["nome"]
+        codigo = request.form["codigo"]
+        c.execute(
+            "INSERT INTO empresas (nome, codigo) VALUES (?,?)",
+            (nome, codigo)
+        )
+        conn.commit()
+
+    c.execute("SELECT * FROM empresas")
+    lista_empresas = c.fetchall()
+    conn.close()
+
+    return render_template("empresas.html", empresas=lista_empresas)
 
 # -------------------------
-# PAINEL POR EMPRESA
+# PAINEL ADMINISTRATIVO
 # -------------------------
 @app.route("/painel/<codigo_empresa>")
 def painel(codigo_empresa):
@@ -104,6 +126,7 @@ def painel(codigo_empresa):
 
     c.execute("SELECT id, nome FROM empresas WHERE codigo=?", (codigo_empresa,))
     empresa = c.fetchone()
+
     if not empresa:
         return "Empresa não encontrada", 404
 
@@ -132,9 +155,18 @@ def painel(codigo_empresa):
     conn.close()
     gerar_grafico(resultados)
 
-    return render_template("painel.html",
-                           resultados=resultados,
-                           empresa=nome_empresa)
+    return render_template(
+        "painel.html",
+        resultados=resultados,
+        empresa=nome_empresa
+    )
+
+# -------------------------
+# OBRIGADO
+# -------------------------
+@app.route("/obrigado")
+def obrigado():
+    return render_template("obrigado.html")
 
 # -------------------------
 # GRÁFICO
@@ -149,6 +181,8 @@ def gerar_grafico(resultados):
     plt.savefig("static/grafico.png")
     plt.close()
 
+# -------------------------
+# START
 # -------------------------
 if __name__ == "__main__":
     app.run(debug=True)

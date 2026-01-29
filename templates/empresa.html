@@ -1,0 +1,15 @@
+<h1>Cadastro de Empresas</h1>
+
+<form method="POST">
+    <input type="text" name="nome" placeholder="Nome da empresa" required>
+    <input type="text" name="codigo" placeholder="Código da empresa" required>
+    <button type="submit">Cadastrar</button>
+</form>
+
+<hr>
+
+<ul>
+{% for e in empresas %}
+    <li>{{ e[1] }} — código: <strong>{{ e[2] }}</strong></li>
+{% endfor %}
+</ul>

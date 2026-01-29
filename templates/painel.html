@@ -1,0 +1,10 @@
+<h2>{{ empresa }} – Resultados Psicossociais</h2>
+
+<img src="/static/grafico.png" width="100%">
+
+<table border="1" width="100%">
+<tr><th>Fator</th><th>% Positiva</th></tr>
+{% for k,v in resultados.items() %}
+<tr><td>{{ k }}</td><td>{{ v }}%</td></tr>
+{% endfor %}
+</table>

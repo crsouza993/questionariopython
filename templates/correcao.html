@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Correção COPSOQ</title>
+    <style>
+        body { font-family: Arial; background:#f4f6f9; }
+        table {
+            border-collapse: collapse;
+            width: 95%;
+            margin: 30px auto;
+            background: #fff;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background: #1a4f8b;
+            color: white;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Planilha de Correção COPSOQ – Versão Curta</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Subescala</th>
+      <th>Pergunta</th>
+      <th>Média Geral</th>
+      <th>Interpretação</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for linha in tabela %}
+    <tr>
+      <td>{{ linha.subescala }}</td>
+      <td>{{ linha.pergunta }}</td>
+      <td>{{ linha.media }}</td>
+      <td>{{ linha.risco }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+
+</body>
+</html>

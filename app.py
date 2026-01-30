@@ -1,48 +1,46 @@
 import sqlite3
+import secrets
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
+DATABASE = "copsoq.db"
 
-# -------------------------
-# BANCO
-# -------------------------
+
+# =====================================================
+# CONEXÃO
+# =====================================================
 def conectar():
-    return sqlite3.connect("database.db")
+    return sqlite3.connect(DATABASE)
 
-def criar_banco():
+
+# =====================================================
+# BANCO
+# =====================================================
+def inicializar_banco():
     conn = conectar()
     c = conn.cursor()
 
     c.execute("""
-        CREATE TABLE IF NOT EXISTS respostas (
+        CREATE TABLE IF NOT EXISTS empresas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            pergunta INTEGER NOT NULL,
-            resposta INTEGER NOT NULL,
-            data_resposta TEXT NOT NULL
+            nome TEXT NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            data_criacao TEXT NOT NULL
         )
     """)
 
-    conn.commit()
-    conn.close()
-
-criar_banco()
-
-def inicializar_banco():
-    conn = sqlite3.connect("copsoq.db")
-    c = conn.cursor()
-
-    # Tabela de respostas
     c.execute("""
         CREATE TABLE IF NOT EXISTS respostas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            empresa_id INTEGER NOT NULL,
             pergunta INTEGER NOT NULL,
             resposta INTEGER NOT NULL,
-            data_hora TEXT NOT NULL
+            data_hora TEXT NOT NULL,
+            FOREIGN KEY (empresa_id) REFERENCES empresas(id)
         )
     """)
 
-    # Tabela de mapeamento COPSOQ
     c.execute("""
         CREATE TABLE IF NOT EXISTS mapeamento_copsoq (
             pergunta INTEGER PRIMARY KEY,
@@ -51,9 +49,8 @@ def inicializar_banco():
         )
     """)
 
-    # Inserção do mapeamento (ignora se já existir)
     c.execute("""
-        INSERT OR IGNORE INTO mapeamento_copsoq (pergunta, subescala, nome_subescala) VALUES
+        INSERT OR IGNORE INTO mapeamento_copsoq VALUES
         (1,'exigencias_quantitativas','Exigências quantitativas'),
         (2,'ritmo_trabalho','Ritmo de trabalho'),
         (3,'exigencias_cognitivas','Exigências cognitivas'),
@@ -99,40 +96,119 @@ def inicializar_banco():
 
     conn.commit()
     conn.close()
-    
+
+
 inicializar_banco()
 
 
-# -------------------------
-# ROTAS
-# -------------------------
-@app.route("/", methods=["GET", "POST"])
-def questionario():
-    if request.method == "POST":
-        conn = conectar()
-        c = conn.cursor()
+# =====================================================
+# INTERPRETAÇÃO
+# =====================================================
+def interpretar_risco(media):
+    if media <= 2:
+        return "Baixo risco"
+    elif media <= 3.5:
+        return "Risco moderado"
+    else:
+        return "Alto risco"
 
+
+# =====================================================
+# HOME – ADMIN
+# =====================================================
+@app.route("/", methods=["GET", "POST"])
+def index():
+    conn = conectar()
+    c = conn.cursor()
+
+    if request.method == "POST":
+        nome = request.form["nome"]
+        token = secrets.token_hex(4)
+        c.execute("""
+            INSERT INTO empresas (nome, token, data_criacao)
+            VALUES (?, ?, ?)
+        """, (nome, token, datetime.now().isoformat()))
+        conn.commit()
+
+    c.execute("SELECT nome, token FROM empresas")
+    empresas = c.fetchall()
+    conn.close()
+
+    return render_template("questionario.html", empresas=empresas)
+
+
+# =====================================================
+# QUESTIONÁRIO
+# =====================================================
+@app.route("/questionario/<token>", methods=["GET", "POST"])
+def questionario(token):
+    conn = conectar()
+    c = conn.cursor()
+
+    c.execute("SELECT id, nome FROM empresas WHERE token = ?", (token,))
+    empresa = c.fetchone()
+
+    if not empresa:
+        return "Empresa não encontrada", 404
+
+    empresa_id = empresa[0]
+
+    if request.method == "POST":
         for i in range(1, 42):
             resposta = request.form.get(f"q{i}")
             if resposta:
                 c.execute("""
-                    INSERT INTO respostas (pergunta, resposta, data_resposta)
-                    VALUES (?, ?, ?)
-                """, (i, resposta, datetime.now()))
+                    INSERT INTO respostas (empresa_id, pergunta, resposta, data_hora)
+                    VALUES (?, ?, ?, ?)
+                """, (empresa_id, i, int(resposta), datetime.now().isoformat()))
 
         conn.commit()
         conn.close()
-
         return redirect(url_for("obrigado"))
 
-    return render_template("questionario.html")
+    conn.close()
+    return render_template("questionario.html", empresa=empresa[1])
+
+
+# =====================================================
+# CORREÇÃO
+# =====================================================
+@app.route("/correcao/<token>")
+def correcao(token):
+    conn = conectar()
+    c = conn.cursor()
+
+    c.execute("SELECT id, nome FROM empresas WHERE token = ?", (token,))
+    empresa = c.fetchone()
+    if not empresa:
+        return "Empresa não encontrada", 404
+
+    empresa_id = empresa[0]
+
+    c.execute("""
+        SELECT m.nome_subescala, ROUND(AVG(r.resposta),2)
+        FROM respostas r
+        JOIN mapeamento_copsoq m ON r.pergunta = m.pergunta
+        WHERE r.empresa_id = ?
+        GROUP BY m.nome_subescala
+    """, (empresa_id,))
+
+    dados = []
+    for nome, media in c.fetchall():
+        dados.append({
+            "subescala": nome,
+            "media": media,
+            "risco": interpretar_risco(media)
+        })
+
+    conn.close()
+    return render_template("correcao.html", dados=dados, empresa=empresa[1])
+
 
 @app.route("/obrigado")
 def obrigado():
-    return "<h2>Obrigado! Questionário enviado com sucesso.</h2>"
+    return "<h2>Obrigado! Resposta enviada.</h2>"
 
-# -------------------------
-# START
-# -------------------------
+
 if __name__ == "__main__":
     app.run(debug=True)

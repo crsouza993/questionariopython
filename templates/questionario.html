@@ -2,8 +2,8 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Questionário Psicossocial</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='psicossocial.css') }}">
+    <title>Questionário Psicossocial – COPSOQ II</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='psicossocial.css') }}">
 </head>
 <body>
 
@@ -12,135 +12,199 @@
     <h1>Questionário de Avaliação Psicossocial</h1>
 
     <p class="subtitulo">
-        Avalie as condições psicossociais do seu trabalho.  
-        As respostas são <strong>anônimas e confidenciais</strong>.
+        As respostas são <strong>anônimas e confidenciais</strong>.<br>
+        Não existem respostas certas ou erradas.
     </p>
 
-    <form method="post" action="">
+    <form method="post" action="/">
 
-        <!-- LEGENDA -->
+        <!-- LEGENDA PADRÃO -->
         <div class="legenda">
-            <span>1 - Discordo totalmente</span>
-            <span>2 - Discordo</span>
-            <span>3 - Neutro</span>
-            <span>4 - Concordo</span>
-            <span>5 - Concordo totalmente</span>
+            <span>1 – Nunca / quase nunca</span>
+            <span>2 – Raramente</span>
+            <span>3 – Às vezes</span>
+            <span>4 – Frequentemente</span>
+            <span>5 – Sempre</span>
         </div>
+
+        <!-- FUNÇÃO DE ESCALA -->
+        {% macro escala(pergunta) %}
+        <div class="escala">
+            <label>
+                <input type="radio" name="q{{ pergunta }}" value="1" required>
+                <span>1<br><small>Nunca / quase nunca</small></span>
+            </label>
+            <label>
+                <input type="radio" name="q{{ pergunta }}" value="2">
+                <span>2<br><small>Raramente</small></span>
+            </label>
+            <label>
+                <input type="radio" name="q{{ pergunta }}" value="3">
+                <span>3<br><small>Às vezes</small></span>
+            </label>
+            <label>
+                <input type="radio" name="q{{ pergunta }}" value="4">
+                <span>4<br><small>Frequentemente</small></span>
+            </label>
+            <label>
+                <input type="radio" name="q{{ pergunta }}" value="5">
+                <span>5<br><small>Sempre</small></span>
+            </label>
+        </div>
+        {% endmacro %}
 
         <!-- BLOCO 1 -->
-        <h2>Carga de Trabalho</h2>
-
+        <h2>Exigências do Trabalho</h2>
+        {% for i, texto in [
+            (1,"A sua carga de trabalho acumula-se por ser mal distribuída?"),
+            (2,"Não tem tempo para completar todas as tarefas?"),
+            (3,"Precisa trabalhar muito rapidamente?"),
+            (4,"O trabalho exige atenção constante?"),
+            (5,"Exige tomar decisões difíceis?"),
+            (6,"O trabalho exige emocionalmente de si?")
+        ] %}
         <div class="pergunta">
-            <label>1. Consigo realizar minhas atividades dentro do horário normal.</label>
-            <div class="escala">
-                <input type="radio" name="q1" value="1" required>
-                <input type="radio" name="q1" value="2">
-                <input type="radio" name="q1" value="3">
-                <input type="radio" name="q1" value="4">
-                <input type="radio" name="q1" value="5">
-            </div>
+            <label>{{ i }}. {{ texto }}</label>
+            {{ escala(i) }}
         </div>
-
-        <div class="pergunta">
-            <label>2. O volume de trabalho é compatível com minha função.</label>
-            <div class="escala">
-                <input type="radio" name="q2" value="1" required>
-                <input type="radio" name="q2" value="2">
-                <input type="radio" name="q2" value="3">
-                <input type="radio" name="q2" value="4">
-                <input type="radio" name="q2" value="5">
-            </div>
-        </div>
+        {% endfor %}
 
         <!-- BLOCO 2 -->
-        <h2>Liderança</h2>
-
+        <h2>Influência e Desenvolvimento</h2>
+        {% for i, texto in [
+            (7,"Tem influência no seu trabalho?"),
+            (8,"O trabalho exige iniciativa?"),
+            (9,"Permite aprender coisas novas?"),
+            (10,"É informado sobre decisões importantes?")
+        ] %}
         <div class="pergunta">
-            <label>3. Recebo orientações claras da minha liderança.</label>
-            <div class="escala">
-                <input type="radio" name="q3" value="1" required>
-                <input type="radio" name="q3" value="2">
-                <input type="radio" name="q3" value="3">
-                <input type="radio" name="q3" value="4">
-                <input type="radio" name="q3" value="5">
-            </div>
+            <label>{{ i }}. {{ texto }}</label>
+            {{ escala(i) }}
         </div>
-
-        <div class="pergunta">
-            <label>4. Sinto-me respeitado(a) pela chefia.</label>
-            <div class="escala">
-                <input type="radio" name="q4" value="1" required>
-                <input type="radio" name="q4" value="2">
-                <input type="radio" name="q4" value="3">
-                <input type="radio" name="q4" value="4">
-                <input type="radio" name="q4" value="5">
-            </div>
-        </div>
+        {% endfor %}
 
         <!-- BLOCO 3 -->
-        <h2>Ambiente e Equilíbrio</h2>
-
+        <h2>Informação, Reconhecimento e Justiça</h2>
+        {% for i, texto in [
+            (11,"Recebe informação suficiente para trabalhar bem?"),
+            (12,"Sabe exactamente quais as suas responsabilidades?"),
+            (13,"O trabalho é reconhecido pela gerência?"),
+            (14,"É tratado de forma justa?"),
+            (15,"Recebe apoio do superior imediato?"),
+            (16,"Existe bom ambiente entre colegas?")
+        ] %}
         <div class="pergunta">
-            <label>5. O ambiente de trabalho é saudável.</label>
-            <div class="escala">
-                <input type="radio" name="q5" value="1" required>
-                <input type="radio" name="q5" value="2">
-                <input type="radio" name="q5" value="3">
-                <input type="radio" name="q5" value="4">
-                <input type="radio" name="q5" value="5">
-            </div>
+            <label>{{ i }}. {{ texto }}</label>
+            {{ escala(i) }}
+        </div>
+        {% endfor %}
+
+        <!-- BLOCO 4 -->
+        <h2>Chefias</h2>
+        {% for i, texto in [
+            (17,"Oferece oportunidades de desenvolvimento?"),
+            (18,"É boa no planeamento do trabalho?"),
+            (19,"Confia nos funcionários?"),
+            (20,"A informação da gerência é confiável?"),
+            (21,"Conflitos são resolvidos de forma justa?"),
+            (22,"O trabalho é igualmente distribuído?")
+        ] %}
+        <div class="pergunta">
+            <label>{{ i }}. {{ texto }}</label>
+            {{ escala(i) }}
+        </div>
+        {% endfor %}
+
+        <!-- BLOCO 5 -->
+        <h2>Autoeficácia</h2>
+        <div class="pergunta">
+            <label>23. Sou capaz de resolver problemas se tentar o suficiente.</label>
+            {{ escala(23) }}
         </div>
 
+        <!-- BLOCO 6 -->
+        <h2>Significado e Satisfação</h2>
+        <div class="legenda">
+            <span>1 – Nada</span>
+            <span>2 – Um pouco</span>
+            <span>3 – Moderadamente</span>
+            <span>4 – Muito</span>
+            <span>5 – Extremamente</span>
+        </div>
+        {% for i, texto in [
+            (24,"O trabalho tem significado para si?"),
+            (25,"O trabalho é importante?"),
+            (26,"Os problemas do trabalho são seus também?"),
+            (27,"Está satisfeito com o trabalho?"),
+            (28,"Preocupa-se em ficar desempregado?")
+        ] %}
         <div class="pergunta">
-            <label>6. Há cooperação entre colegas.</label>
-            <div class="escala">
-                <input type="radio" name="q6" value="1" required>
-                <input type="radio" name="q6" value="2">
-                <input type="radio" name="q6" value="3">
-                <input type="radio" name="q6" value="4">
-                <input type="radio" name="q6" value="5">
-            </div>
+            <label>{{ i }}. {{ texto }}</label>
+            {{ escala(i) }}
+        </div>
+        {% endfor %}
+
+        <!-- BLOCO 7 -->
+        <h2>Saúde Geral</h2>
+        <div class="pergunta">
+            <label>29. Em geral, como avalia a sua saúde?</label>
+            <select name="q29" required>
+                <option value="">Selecione</option>
+                <option value="5">Excelente</option>
+                <option value="4">Muito boa</option>
+                <option value="3">Boa</option>
+                <option value="2">Razoável</option>
+                <option value="1">Deficitária</option>
+            </select>
         </div>
 
+        <!-- BLOCO 8 -->
+        <h2>Impacto na Vida Privada</h2>
+        {% for i, texto in [
+            (30,"O trabalho afecta negativamente a vida privada pela energia exigida?"),
+            (31,"O trabalho afecta negativamente a vida privada pelo tempo exigido?")
+        ] %}
         <div class="pergunta">
-            <label>7. Meu trabalho é reconhecido.</label>
-            <div class="escala">
-                <input type="radio" name="q7" value="1" required>
-                <input type="radio" name="q7" value="2">
-                <input type="radio" name="q7" value="3">
-                <input type="radio" name="q7" value="4">
-                <input type="radio" name="q7" value="5">
-            </div>
+            <label>{{ i }}. {{ texto }}</label>
+            {{ escala(i) }}
         </div>
+        {% endfor %}
 
+        <!-- BLOCO 9 -->
+        <h2>Últimas 4 semanas</h2>
+        {% for i, texto in [
+            (32,"Dificuldade em voltar a adormecer?"),
+            (33,"Fisicamente exausto?"),
+            (34,"Emocionalmente exausto?"),
+            (35,"Irritado?"),
+            (36,"Ansioso?"),
+            (37,"Triste?")
+        ] %}
         <div class="pergunta">
-            <label>8. Consigo equilibrar trabalho e vida pessoal.</label>
-            <div class="escala">
-                <input type="radio" name="q8" value="1" required>
-                <input type="radio" name="q8" value="2">
-                <input type="radio" name="q8" value="3">
-                <input type="radio" name="q8" value="4">
-                <input type="radio" name="q8" value="5">
-            </div>
+            <label>{{ i }}. {{ texto }}</label>
+            {{ escala(i) }}
         </div>
+        {% endfor %}
 
+        <!-- BLOCO 10 -->
+        <h2>Violência e Assédio (últimos 12 meses)</h2>
+        {% for i, texto in [
+            (38,"Insultos ou provocações verbais?"),
+            (39,"Assédio sexual indesejado?"),
+            (40,"Ameaças de violência?"),
+            (41,"Violência física?")
+        ] %}
         <div class="pergunta">
-            <label>9. O trabalho não afeta negativamente minha saúde mental.</label>
-            <div class="escala">
-                <input type="radio" name="q9" value="1" required>
-                <input type="radio" name="q9" value="2">
-                <input type="radio" name="q9" value="3">
-                <input type="radio" name="q9" value="4">
-                <input type="radio" name="q9" value="5">
-            </div>
+            <label>{{ i }}. {{ texto }}</label>
+            {{ escala(i) }}
         </div>
+        {% endfor %}
 
-        <button type="submit">Enviar Respostas</button>
-
+        <button type="submit">Enviar Questionário</button>
     </form>
 
     <p class="rodape">
-        Questionário anônimo – conforme LGPD e NR-01.
+        COPSOQ II – Versão Curta | Avaliação Psicossocial – NR-01 | LGPD
     </p>
 
 </div>

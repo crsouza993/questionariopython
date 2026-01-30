@@ -1,7 +1,6 @@
 import sqlite3
 from datetime import datetime
-from flask import Flask, render_template, request, redirect
-import matplotlib.pyplot as plt
+from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
@@ -16,21 +15,11 @@ def criar_banco():
     c = conn.cursor()
 
     c.execute("""
-        CREATE TABLE IF NOT EXISTS empresas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT,
-            codigo TEXT UNIQUE,
-            ativa INTEGER DEFAULT 1
-        )
-    """)
-
-    c.execute("""
         CREATE TABLE IF NOT EXISTS respostas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            empresa_id INTEGER,
-            pergunta INTEGER,
-            resposta INTEGER,
-            data_resposta TEXT
+            pergunta INTEGER NOT NULL,
+            resposta INTEGER NOT NULL,
+            data_resposta TEXT NOT NULL
         )
     """)
 
@@ -39,147 +28,108 @@ def criar_banco():
 
 criar_banco()
 
-# -------------------------
-# ROTAS BÁSICAS
-# -------------------------
-@app.route("/")
-def index():
-    return render_template("questionario.html")
-
-@app.route("/teste", methods=["GET", "POST"])
-def teste():
-    if request.method == "POST":
-        return redirect("/")
-    return "Teste OK"
-
-# -------------------------
-# QUESTIONÁRIO (SEM CÓDIGO)
-# -------------------------
-@app.route("/questionario")
-def questionario_padrao():
-    return render_template("questionario.html")
-
-# -------------------------
-# QUESTIONÁRIO (COM CÓDIGO DA EMPRESA)
-# -------------------------
-@app.route("/questionario/<codigo_empresa>", methods=["GET", "POST"])
-def questionario_empresa(codigo_empresa):
-    conn = conectar()
+def inicializar_banco():
+    conn = sqlite3.connect("copsoq.db")
     c = conn.cursor()
 
-    c.execute(
-        "SELECT id, nome FROM empresas WHERE codigo=? AND ativa=1",
-        (codigo_empresa,)
-    )
-    empresa = c.fetchone()
+    # Tabela de respostas
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS respostas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pergunta INTEGER NOT NULL,
+            resposta INTEGER NOT NULL,
+            data_hora TEXT NOT NULL
+        )
+    """)
 
-    if not empresa:
-        return "Empresa não encontrada ou inativa", 404
+    # Tabela de mapeamento COPSOQ
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS mapeamento_copsoq (
+            pergunta INTEGER PRIMARY KEY,
+            subescala TEXT NOT NULL,
+            nome_subescala TEXT NOT NULL
+        )
+    """)
 
-    empresa_id, nome_empresa = empresa
+    # Inserção do mapeamento (ignora se já existir)
+    c.execute("""
+        INSERT OR IGNORE INTO mapeamento_copsoq (pergunta, subescala, nome_subescala) VALUES
+        (1,'exigencias_quantitativas','Exigências quantitativas'),
+        (2,'ritmo_trabalho','Ritmo de trabalho'),
+        (3,'exigencias_cognitivas','Exigências cognitivas'),
+        (4,'exigencias_emocionais','Exigências emocionais'),
+        (5,'exigencias_cognitivas','Exigências cognitivas'),
+        (6,'exigencias_emocionais','Exigências emocionais'),
+        (7,'influencia_trabalho','Influência no trabalho'),
+        (8,'influencia_trabalho','Influência no trabalho'),
+        (9,'desenvolvimento','Possibilidades de desenvolvimento'),
+        (10,'previsibilidade','Previsibilidade'),
+        (11,'reconhecimento','Reconhecimento'),
+        (12,'clareza_papeis','Clareza de papéis'),
+        (13,'reconhecimento','Reconhecimento'),
+        (14,'justica','Justiça'),
+        (15,'apoio_superior','Apoio social do superior'),
+        (16,'apoio_colegas','Apoio social de colegas'),
+        (17,'qualidade_lideranca','Qualidade da liderança'),
+        (18,'qualidade_lideranca','Qualidade da liderança'),
+        (19,'confianca_gestao','Confiança na gestão'),
+        (20,'confianca_gestao','Confiança na gestão'),
+        (21,'justica','Justiça'),
+        (22,'organizacao_trabalho','Organização do trabalho'),
+        (23,'autoeficacia','Autoeficácia'),
+        (24,'sentido_trabalho','Sentido do trabalho'),
+        (25,'sentido_trabalho','Sentido do trabalho'),
+        (26,'comprometimento','Comprometimento com o trabalho'),
+        (27,'satisfacao_trabalho','Satisfação no trabalho'),
+        (28,'inseguranca_emprego','Insegurança no emprego'),
+        (29,'saude_geral','Saúde geral'),
+        (30,'conflito_trabalho_familia','Conflito trabalho-família'),
+        (31,'conflito_trabalho_familia','Conflito trabalho-família'),
+        (32,'problemas_sono','Problemas de sono'),
+        (33,'exaustao_fisica','Exaustão física'),
+        (34,'exaustao_emocional','Exaustão emocional'),
+        (35,'irritabilidade','Irritabilidade'),
+        (36,'ansiedade','Ansiedade'),
+        (37,'depressao','Depressão'),
+        (38,'assedio_moral','Assédio moral'),
+        (39,'assedio_sexual','Assédio sexual'),
+        (40,'ameaca_violencia','Ameaça de violência'),
+        (41,'violencia_fisica','Violência física')
+    """)
 
+    conn.commit()
+    conn.close()
+    
+inicializar_banco()
+
+
+# -------------------------
+# ROTAS
+# -------------------------
+@app.route("/", methods=["GET", "POST"])
+def questionario():
     if request.method == "POST":
-        for i in range(1, 11):
+        conn = conectar()
+        c = conn.cursor()
+
+        for i in range(1, 42):
             resposta = request.form.get(f"q{i}")
             if resposta:
                 c.execute("""
-                    INSERT INTO respostas (empresa_id, pergunta, resposta, data_resposta)
-                    VALUES (?,?,?,?)
-                """, (empresa_id, i, resposta, datetime.now()))
+                    INSERT INTO respostas (pergunta, resposta, data_resposta)
+                    VALUES (?, ?, ?)
+                """, (i, resposta, datetime.now()))
+
         conn.commit()
         conn.close()
-        return redirect("/obrigado")
 
-    conn.close()
-    return render_template("questionario.html", empresa=nome_empresa)
+        return redirect(url_for("obrigado"))
 
-# -------------------------
-# EMPRESAS
-# -------------------------
-@app.route("/empresas", methods=["GET", "POST"])
-def empresas():
-    conn = conectar()
-    c = conn.cursor()
+    return render_template("questionario.html")
 
-    if request.method == "POST":
-        nome = request.form["nome"]
-        codigo = request.form["codigo"]
-        c.execute(
-            "INSERT INTO empresas (nome, codigo) VALUES (?,?)",
-            (nome, codigo)
-        )
-        conn.commit()
-
-    c.execute("SELECT * FROM empresas")
-    lista_empresas = c.fetchall()
-    conn.close()
-
-    return render_template("empresas.html", empresas=lista_empresas)
-
-# -------------------------
-# PAINEL ADMINISTRATIVO
-# -------------------------
-@app.route("/painel/<codigo_empresa>")
-def painel(codigo_empresa):
-    conn = conectar()
-    c = conn.cursor()
-
-    c.execute("SELECT id, nome FROM empresas WHERE codigo=?", (codigo_empresa,))
-    empresa = c.fetchone()
-
-    if not empresa:
-        return "Empresa não encontrada", 404
-
-    empresa_id, nome_empresa = empresa
-
-    blocos = {
-        "Carga de Trabalho": [1, 2],
-        "Liderança": [3, 4],
-        "Clima Organizacional": [5, 6],
-        "Reconhecimento": [7, 8],
-        "Equilíbrio Vida-Trabalho": [9, 10]
-    }
-
-    resultados = {}
-
-    for bloco, perguntas in blocos.items():
-        c.execute(f"""
-            SELECT COUNT(*),
-                   SUM(CASE WHEN resposta >= 4 THEN 1 ELSE 0 END)
-            FROM respostas
-            WHERE empresa_id=? AND pergunta IN ({','.join(map(str, perguntas))})
-        """, (empresa_id,))
-        total, positivas = c.fetchone()
-        resultados[bloco] = round((positivas / total) * 100, 1) if total else 0
-
-    conn.close()
-    gerar_grafico(resultados)
-
-    return render_template(
-        "painel.html",
-        resultados=resultados,
-        empresa=nome_empresa
-    )
-
-# -------------------------
-# OBRIGADO
-# -------------------------
 @app.route("/obrigado")
 def obrigado():
-    return render_template("obrigado.html")
-
-# -------------------------
-# GRÁFICO
-# -------------------------
-def gerar_grafico(resultados):
-    plt.figure()
-    plt.bar(resultados.keys(), resultados.values())
-    plt.ylabel("Respostas positivas (%)")
-    plt.title("Avaliação Psicossocial")
-    plt.xticks(rotation=30)
-    plt.tight_layout()
-    plt.savefig("static/grafico.png")
-    plt.close()
+    return "<h2>Obrigado! Questionário enviado com sucesso.</h2>"
 
 # -------------------------
 # START

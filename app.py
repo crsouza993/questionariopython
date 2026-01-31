@@ -1,26 +1,27 @@
 import sqlite3
-import secrets
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
+
 DATABASE = "copsoq.db"
 
-
-# =====================================================
+# -------------------------
 # CONEXÃO
-# =====================================================
+# -------------------------
 def conectar():
     return sqlite3.connect(DATABASE)
 
-
-# =====================================================
-# BANCO
-# =====================================================
+# -------------------------
+# CRIAÇÃO DO BANCO
+# -------------------------
 def inicializar_banco():
     conn = conectar()
     c = conn.cursor()
 
+    # -------------------------
+    # TABELA DE EMPRESAS
+    # -------------------------
     c.execute("""
         CREATE TABLE IF NOT EXISTS empresas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,6 +31,9 @@ def inicializar_banco():
         )
     """)
 
+    # -------------------------
+    # TABELA DE RESPOSTAS
+    # -------------------------
     c.execute("""
         CREATE TABLE IF NOT EXISTS respostas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,6 +45,9 @@ def inicializar_banco():
         )
     """)
 
+    # -------------------------
+    # TABELA DE MAPEAMENTO COPSOQ
+    # -------------------------
     c.execute("""
         CREATE TABLE IF NOT EXISTS mapeamento_copsoq (
             pergunta INTEGER PRIMARY KEY,
@@ -49,8 +56,9 @@ def inicializar_banco():
         )
     """)
 
+    # Inserção do mapeamento (executa só uma vez)
     c.execute("""
-        INSERT OR IGNORE INTO mapeamento_copsoq VALUES
+        INSERT OR IGNORE INTO mapeamento_copsoq (pergunta, subescala, nome_subescala) VALUES
         (1,'exigencias_quantitativas','Exigências quantitativas'),
         (2,'ritmo_trabalho','Ritmo de trabalho'),
         (3,'exigencias_cognitivas','Exigências cognitivas'),
@@ -100,10 +108,9 @@ def inicializar_banco():
 
 inicializar_banco()
 
-
-# =====================================================
-# INTERPRETAÇÃO
-# =====================================================
+# -------------------------
+# REGRAS
+# -------------------------
 def interpretar_risco(media):
     if media <= 2:
         return "Baixo risco"
@@ -112,103 +119,103 @@ def interpretar_risco(media):
     else:
         return "Alto risco"
 
+ESCALA_SAUDE = {
+    5: "Excelente",
+    4: "Muito boa",
+    3: "Boa",
+    2: "Razoável",
+    1: "Deficitária"
+}
 
-# =====================================================
-# HOME – ADMIN
-# =====================================================
-@app.route("/", methods=["GET", "POST"])
-def index():
+# -------------------------
+# CORREÇÃO
+# -------------------------
+def gerar_correcao():
     conn = conectar()
     c = conn.cursor()
 
-    if request.method == "POST":
-        nome = request.form["nome"]
-        token = secrets.token_hex(4)
-        c.execute("""
-            INSERT INTO empresas (nome, token, data_criacao)
-            VALUES (?, ?, ?)
-        """, (nome, token, datetime.now().isoformat()))
-        conn.commit()
+    # Média geral por subescala
+    c.execute("""
+        SELECT 
+            m.subescala,
+            m.nome_subescala,
+            ROUND(AVG(r.resposta), 2) AS media
+        FROM respostas r
+        JOIN mapeamento_copsoq m ON r.pergunta = m.pergunta
+        GROUP BY m.subescala, m.nome_subescala
+    """)
 
-    c.execute("SELECT nome, token FROM empresas")
-    empresas = c.fetchall()
+    medias = {
+        row[0]: {
+            "nome": row[1],
+            "media": row[2],
+            "risco": interpretar_risco(row[2])
+        }
+        for row in c.fetchall()
+    }
+
+    # Lista de perguntas em ordem
+    c.execute("""
+        SELECT 
+            m.subescala,
+            m.nome_subescala,
+            m.pergunta
+        FROM mapeamento_copsoq m
+        ORDER BY m.pergunta
+    """)
+
+    perguntas = c.fetchall()
     conn.close()
 
-    return render_template("questionario.html", empresas=empresas)
+    tabela_final = []
+
+    for subescala, nome, pergunta in perguntas:
+        if subescala in medias:
+            tabela_final.append({
+                "subescala": nome,
+                "pergunta": pergunta,
+                "media": medias[subescala]["media"],
+                "risco": medias[subescala]["risco"]
+            })
+
+    return tabela_final
 
 
-# =====================================================
-# QUESTIONÁRIO
-# =====================================================
-@app.route("/questionario/<token>", methods=["GET", "POST"])
-def questionario(token):
-    conn = conectar()
-    c = conn.cursor()
 
-    c.execute("SELECT id, nome FROM empresas WHERE token = ?", (token,))
-    empresa = c.fetchone()
-
-    if not empresa:
-        return "Empresa não encontrada", 404
-
-    empresa_id = empresa[0]
-
+# -------------------------
+# ROTAS
+# -------------------------
+@app.route("/", methods=["GET", "POST"])
+def questionario():
     if request.method == "POST":
+        conn = conectar()
+        c = conn.cursor()
+
         for i in range(1, 42):
             resposta = request.form.get(f"q{i}")
             if resposta:
                 c.execute("""
-                    INSERT INTO respostas (empresa_id, pergunta, resposta, data_hora)
-                    VALUES (?, ?, ?, ?)
-                """, (empresa_id, i, int(resposta), datetime.now().isoformat()))
+                    INSERT INTO respostas (pergunta, resposta, data_hora)
+                    VALUES (?, ?, ?)
+                """, (i, int(resposta), datetime.now().isoformat()))
 
         conn.commit()
         conn.close()
         return redirect(url_for("obrigado"))
 
-    conn.close()
-    return render_template("questionario.html", empresa=empresa[1])
+    return render_template("questionario.html")
 
-
-# =====================================================
-# CORREÇÃO
-# =====================================================
-@app.route("/correcao/<token>")
-def correcao(token):
-    conn = conectar()
-    c = conn.cursor()
-
-    c.execute("SELECT id, nome FROM empresas WHERE token = ?", (token,))
-    empresa = c.fetchone()
-    if not empresa:
-        return "Empresa não encontrada", 404
-
-    empresa_id = empresa[0]
-
-    c.execute("""
-        SELECT m.nome_subescala, ROUND(AVG(r.resposta),2)
-        FROM respostas r
-        JOIN mapeamento_copsoq m ON r.pergunta = m.pergunta
-        WHERE r.empresa_id = ?
-        GROUP BY m.nome_subescala
-    """, (empresa_id,))
-
-    dados = []
-    for nome, media in c.fetchall():
-        dados.append({
-            "subescala": nome,
-            "media": media,
-            "risco": interpretar_risco(media)
-        })
-
-    conn.close()
-    return render_template("correcao.html", dados=dados, empresa=empresa[1])
-
+@app.route("/correcao")
+def correcao():
+    tabela = gerar_correcao()
+    return render_template("correcao.html", tabela=tabela)
 
 @app.route("/obrigado")
 def obrigado():
-    return "<h2>Obrigado! Resposta enviada.</h2>"
+    return "<h2>Obrigado! Questionário enviado com sucesso.</h2>"
 
-
+# -------------------------
+# START
+# -------------------------
 if __name__ == "__main__":
     app.run(debug=True)

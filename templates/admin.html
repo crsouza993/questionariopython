@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Empresas</title>
+</head>
+<body>
+    <h2>Cadastrar empresa</h2>
+
+    <form method="post">
+        <input type="text" name="nome" placeholder="Nome da empresa" required>
+        <button type="submit">Criar</button>
+    </form>
+
+    <h3>Empresas cadastradas</h3>
+    <ul>
+        {% for id, nome, token in empresas %}
+            <li>
+                <strong>{{ nome }}</strong><br>
+                Questionário: <a href="/q/{{ token }}">/q/{{ token }}</a><br>
+                Correção: <a href="/correcao/{{ id }}">/correcao/{{ id }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

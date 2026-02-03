@@ -182,6 +182,22 @@ def admin():
     conn.close()
     return render_template("admin.html", empresas=empresas, erro=erro)
 
+# EXCLUIR EMPRESA
+@app.route("/admin/excluir/<int:empresa_id>", methods=["POST"])
+def excluir_empresa(empresa_id):
+    conn = conectar()
+    c = conn.cursor()
+
+    # 1️⃣ apagar respostas da empresa
+    c.execute("DELETE FROM respostas WHERE empresa_id = ?", (empresa_id,))
+
+    # 2️⃣ apagar a empresa
+    c.execute("DELETE FROM empresas WHERE id = ?", (empresa_id,))
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("admin"))
 
 # QUESTIONÁRIO POR EMPRESA
 @app.route("/q/<token>", methods=["GET", "POST"])

@@ -14,13 +14,23 @@
 
     <h3>Empresas cadastradas</h3>
     <ul>
-        {% for id, nome, token in empresas %}
-            <li>
-                <strong>{{ nome }}</strong><br>
-                Questionário: <a href="/q/{{ token }}">/q/{{ token }}</a><br>
-                Correção: <a href="/correcao/{{ id }}">/correcao/{{ id }}</a>
-            </li>
-        {% endfor %}
-    </ul>
+{% for id, nome, token in empresas %}
+  <li>
+    <strong>{{ nome }}</strong><br>
+
+    Questionário:
+    <a href="/q/{{ token }}">/q/{{ token }}</a><br>
+
+    Correção:
+    <a href="/correcao/{{ id }}">/correcao/{{ id }}</a><br>
+
+    <form action="/admin/excluir/{{ id }}" method="post" style="margin-top:5px;">
+      <button type="submit" onclick="return confirm('Excluir esta empresa?')">
+        🗑 Excluir
+      </button>
+    </form>
+  </li>
+{% endfor %}
+</ul>
 </body>
 </html>

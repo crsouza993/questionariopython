@@ -17,6 +17,26 @@
       margin-bottom: 30px;
     }
 
+    /* =========================
+       STATUS GERAL
+       ========================= */
+    .status-geral {
+      padding: 25px;
+      border-radius: 14px;
+      font-size: 26px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .status-alto { background: #e74c3c; }
+    .status-moderado { background: #f1c40f; color: #333; }
+    .status-baixo { background: #2ecc71; }
+
+    /* =========================
+       CARDS
+       ========================= */
     .cards {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -27,7 +47,7 @@
     .card {
       background: white;
       padding: 20px;
-      border-radius: 10px;
+      border-radius: 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,.1);
       text-align: center;
     }
@@ -35,10 +55,21 @@
     .card h3 {
       margin-bottom: 10px;
       color: #555;
+      font-size: 16px;
     }
 
     .card strong {
-      font-size: 28px;
+      font-size: 32px;
+    }
+
+    /* =========================
+       LAYOUT EM LINHA
+       ========================= */
+    .linha {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 30px;
+      margin-bottom: 40px;
     }
 
     .bloco {
@@ -46,12 +77,11 @@
       padding: 30px;
       border-radius: 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,.1);
-      margin-bottom: 40px;
     }
 
     .lista div {
-      padding: 12px;
-      margin-bottom: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
       border-left: 8px solid;
       border-radius: 6px;
       background: #fafafa;
@@ -60,43 +90,249 @@
     .baixo { border-color: #2ecc71; }
     .moderado { border-color: #f1c40f; }
     .alto { border-color: #e74c3c; }
+
+/* =========================
+   LEGENDA DE CORES
+   ========================= */
+.legenda {
+  background: white;
+  padding: 22px 26px;
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.legenda-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 17px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.legenda-cor {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.cor-alto { background: #e74c3c; }
+.cor-moderado { background: #f1c40f; }
+.cor-baixo { background: #2ecc71; }
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: white;
+    padding: 0;
+  }
+
+  button {
+    display: none;
+  }
+
+  .card,
+  .bloco,
+  .status-geral {
+    box-shadow: none;
+  }
+
+  canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}
+@media print {
+
+  /* NÃO QUEBRAR O BLOCO DE DIAGNÓSTICO */
+  .diagnostico-print {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* NÃO QUEBRAR CADA ITEM */
+  .item-diagnostico {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* FORÇA TUDO A CABER MELHOR */
+  .diagnostico-print .lista div {
+    font-size: 13px;
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+
+  /* REMOVE SOBRAS DE ESPAÇO */
+  .bloco {
+    margin-bottom: 20px;
+  }
+}
+
+.coluna-esquerda {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.ranking .rank {
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.prioridades {
+  list-style: none;
+  padding: 0;
+}
+
+.prioridades li {
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
   </style>
 </head>
 
 <body>
+
 <h1>Dashboard de Riscos Psicossociais – COPSOQ</h1>
+
+{% if tabela|length == 0 %}
+  <div class="status-geral status-moderado">
+    ⚠️ Ainda não há respostas suficientes para gerar o diagnóstico
+  </div>
+{% else %}
+
+  {% set media_geral = (tabela | map(attribute='media') | sum / tabela|length) %}
+
+  {% if media_geral > 3.5 %}
+    <div class="status-geral status-alto">
+      🟥 Empresa em <strong>ALTO RISCO</strong> psicossocial
+    </div>
+  {% elif media_geral > 2 %}
+    <div class="status-geral status-moderado">
+      🟨 Empresa em <strong>RISCO MODERADO</strong> psicossocial
+    </div>
+  {% else %}
+    <div class="status-geral status-baixo">
+      🟩 Empresa em <strong>BAIXO RISCO</strong> psicossocial
+    </div>
+  {% endif %}
+
+{% endif %}
+
+<!-- =========================
+     CARDS RESUMO
+     ========================= -->
 <div class="cards">
   <div class="card">
     <h3>Subescalas avaliadas</h3>
-    <strong>{{ dados|length }}</strong>
+    <strong>{{ tabela|length }}</strong>
   </div>
 
   <div class="card">
     <h3>Média geral</h3>
     <strong>
-      {{ (dados | map(attribute='media') | sum / dados|length) | round(2) }}
-    </strong>
-  </div>
-
-  <div class="card">
-    <h3>Risco predominante</h3>
-    <strong>
-      {% set riscos = dados | map(attribute='risco') | list %}
-      {% if riscos.count('Alto risco') >= riscos.count('Risco moderado') %}
-        Alto
+      {% if tabela|length > 0 %}
+        {{ media_geral | round(2) }}
       {% else %}
-        Moderado
+        —
       {% endif %}
     </strong>
   </div>
+
+<div class="legenda">
+  <div class="legenda-item">
+    <div class="legenda-cor cor-alto"></div>
+    Empresa em <strong>ALTO RISCO</strong> psicossocial
+  </div>
+
+  <div class="legenda-item">
+    <div class="legenda-cor cor-moderado"></div>
+    Empresa em <strong>RISCO MODERADO</strong> psicossocial
+  </div>
+
+  <div class="legenda-item">
+    <div class="legenda-cor cor-baixo"></div>
+   Empresa em <strong>BAIXO RISCO</strong> psicossocial
+  </div>
 </div>
-<div class="bloco">
-  <h2>Média por Subescala</h2>
-  <canvas id="grafico"></canvas>
 </div>
 
+<!-- =========================
+     GRÁFICO + DIAGNÓSTICO LADO A LADO
+     ========================= -->
+<div class="linha">
+
+  <!-- COLUNA ESQUERDA -->
+  <div class="coluna-esquerda">
+
+    <div class="bloco">
+      <h2>Média por Subescala</h2>
+      <canvas id="grafico"></canvas>
+    </div>
+
+    <!-- 🔹 RESUMO GERAL – RANKING -->
+    <div class="bloco">
+      <h2>Resumo Geral – Ranking das Subescalas</h2>
+
+      <div class="ranking">
+        <div class="rank alto">Risco Muito Alto (4.1 – 5.0)</div>
+        <div class="rank alto">Risco Alto (3.1 – 4.0)</div>
+        <div class="rank moderado">Risco Moderado (2.1 – 3.0)</div>
+        <div class="rank baixo">Risco Baixo (0 – 2.0)</div>
+      </div>
+    </div>
+
+    <!-- 🔹 PRIORIDADES DE INTERVENÇÃO -->
+    <div class="bloco">
+      <h2>Prioridades de Intervenção</h2>
+
+      <ul class="prioridades">
+        <li class="alto">🔥 Intervenção imediata</li>
+        <li class="moderado">⚠️ Plano de ação</li>
+        <li class="moderado">👀 Monitorar</li>
+        <li class="baixo">✅ Manter</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- COLUNA DIREITA -->
+  <div class="bloco diagnostico-print">
+    <h2>Diagnóstico por Subescala</h2>
+
+    <div class="lista">
+      {% for item in tabela %}
+        <div class="item-diagnostico
+          {% if item.risco == 'Baixo risco' %}baixo
+          {% elif item.risco == 'Risco moderado' %}moderado
+          {% else %}alto{% endif %}
+        ">
+          <strong>{{ item.subescala }}</strong><br>
+          Média: {{ item.media }} — {{ item.risco }}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+
 <script>
-const dados = {{ dados | tojson }};
+const dados = {{ tabela | tojson }};
 
 const labels = dados.map(d => d.subescala);
 const medias = dados.map(d => d.media);
@@ -116,31 +352,32 @@ new Chart(document.getElementById("grafico"), {
     }]
   },
   options: {
+    indexAxis: 'y',
     plugins: { legend: { display: false } },
     scales: {
-      y: { beginAtZero: true, max: 5 }
+      x: { min: 0, max: 5 }
     }
   }
 });
 </script>
-<div class="bloco">
-  <h2>Diagnóstico por Subescala</h2>
 
-  <div class="lista">
-    {% for item in dados %}
-      <div class="
-        {% if item.risco == 'Baixo risco' %}baixo
-        {% elif item.risco == 'Risco moderado' %}moderado
-        {% else %}alto{% endif %}
-      ">
-        <strong>{{ item.subescala }}</strong><br>
-        Média: {{ item.media }} — {{ item.risco }}
-      </div>
-    {% endfor %}
-  </div>
-</div>
 
-</div>
+
+<button onclick="window.print()" style="
+  padding:12px 20px;
+  background:#2c3e50;
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-size:16px;
+  cursor:pointer;
+  margin-bottom:20px;
+">
+  📄 Exportar PDF
+</button>
+
+
+
+
 </body>
 </html>
-

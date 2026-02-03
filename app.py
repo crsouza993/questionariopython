@@ -230,14 +230,54 @@ def questionario_empresa(token):
     conn.close()
     return render_template("questionario.html", empresa=empresa)
 
+# DASHBOARD
+@app.route("/dashboard/<int:empresa_id>")
+def dashboard(empresa_id):
+    tabela = gerar_correcao(empresa_id)
+    resumo = gerar_resumo_empresa(empresa_id)
+
+    if not resumo:
+        return "Sem dados para esta empresa", 404
+
+    return render_template(
+        "dashboard.html",
+        tabela=tabela,
+        resumo=resumo
+    )
 
 
 # CORREÇÃO POR EMPRESA
 @app.route("/correcao/<int:empresa_id>")
 def correcao(empresa_id):
-    dados = gerar_correcao(empresa_id)
-    return render_template("dashboard.html", dados=dados)
+    tabela = gerar_correcao(empresa_id)
+    resumo = gerar_resumo(tabela)
 
+    return render_template(
+        "dashboard.html",
+        tabela=tabela,
+        resumo=resumo
+    )
+
+
+def gerar_resumo(tabela):
+    total_subescalas = len(tabela)
+
+    media_geral = round(
+        sum(item["media"] for item in tabela) / total_subescalas, 2
+    ) if total_subescalas > 0 else 0
+
+    if media_geral <= 2:
+        risco_geral = "Baixo risco"
+    elif media_geral <= 3.5:
+        risco_geral = "Risco moderado"
+    else:
+        risco_geral = "Alto risco"
+
+    return {
+        "total_subescalas": total_subescalas,
+        "media_geral": media_geral,
+        "risco_geral": risco_geral
+    }
 
 
 @app.route("/obrigado")

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard COPSOQ</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 30px;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.1);
+      text-align: center;
+    }
+
+    .card h3 {
+      margin-bottom: 10px;
+      color: #555;
+    }
+
+    .card strong {
+      font-size: 28px;
+    }
+
+    .bloco {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.1);
+      margin-bottom: 40px;
+    }
+
+    .lista div {
+      padding: 12px;
+      margin-bottom: 10px;
+      border-left: 8px solid;
+      border-radius: 6px;
+      background: #fafafa;
+    }
+
+    .baixo { border-color: #2ecc71; }
+    .moderado { border-color: #f1c40f; }
+    .alto { border-color: #e74c3c; }
+  </style>
+</head>
+
+<body>
+<h1>Dashboard de Riscos Psicossociais – COPSOQ</h1>
+<div class="cards">
+  <div class="card">
+    <h3>Subescalas avaliadas</h3>
+    <strong>{{ dados|length }}</strong>
+  </div>
+
+  <div class="card">
+    <h3>Média geral</h3>
+    <strong>
+      {{ (dados | map(attribute='media') | sum / dados|length) | round(2) }}
+    </strong>
+  </div>
+
+  <div class="card">
+    <h3>Risco predominante</h3>
+    <strong>
+      {% set riscos = dados | map(attribute='risco') | list %}
+      {% if riscos.count('Alto risco') >= riscos.count('Risco moderado') %}
+        Alto
+      {% else %}
+        Moderado
+      {% endif %}
+    </strong>
+  </div>
+</div>
+<div class="bloco">
+  <h2>Média por Subescala</h2>
+  <canvas id="grafico"></canvas>
+</div>
+
+<script>
+const dados = {{ dados | tojson }};
+
+const labels = dados.map(d => d.subescala);
+const medias = dados.map(d => d.media);
+const cores = dados.map(d => {
+  if (d.risco === "Baixo risco") return "#2ecc71";
+  if (d.risco === "Risco moderado") return "#f1c40f";
+  return "#e74c3c";
+});
+
+new Chart(document.getElementById("grafico"), {
+  type: "bar",
+  data: {
+    labels: labels,
+    datasets: [{
+      data: medias,
+      backgroundColor: cores
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, max: 5 }
+    }
+  }
+});
+</script>
+<div class="bloco">
+  <h2>Diagnóstico por Subescala</h2>
+
+  <div class="lista">
+    {% for item in dados %}
+      <div class="
+        {% if item.risco == 'Baixo risco' %}baixo
+        {% elif item.risco == 'Risco moderado' %}moderado
+        {% else %}alto{% endif %}
+      ">
+        <strong>{{ item.subescala }}</strong><br>
+        Média: {{ item.media }} — {{ item.risco }}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+</div>
+</body>
+</html>
+

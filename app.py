@@ -235,8 +235,9 @@ def questionario_empresa(token):
 # CORREÇÃO POR EMPRESA
 @app.route("/correcao/<int:empresa_id>")
 def correcao(empresa_id):
-    tabela = gerar_correcao(empresa_id)
-    return render_template("correcao.html", tabela=tabela)
+    dados = gerar_correcao(empresa_id)
+    return render_template("dashboard.html", dados=dados)
+
 
 
 @app.route("/obrigado")

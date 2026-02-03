@@ -189,7 +189,8 @@ def questionario_empresa(token):
     conn = conectar()
     c = conn.cursor()
 
-    c.execute("SELECT id FROM empresas WHERE token = ?", (token,))
+    # busca empresa existente
+    c.execute("SELECT id, nome FROM empresas WHERE token = ?", (token,))
     empresa = c.fetchone()
 
     if not empresa:
@@ -203,15 +204,16 @@ def questionario_empresa(token):
             if resposta:
                 c.execute("""
                     INSERT INTO respostas (empresa_id, pergunta, resposta, data_hora)
-                    VALUES (?, ?, ?, ?)
-                """, (empresa_id, i, int(resposta), datetime.now().isoformat()))
+                    VALUES (?, ?, ?, datetime('now'))
+                """, (empresa_id, i, int(resposta)))
 
         conn.commit()
         conn.close()
-        return redirect(url_for("obrigado"))
+        return render_template("obrigado.html")
 
     conn.close()
-    return render_template("questionario.html")
+    return render_template("questionario.html", empresa=empresa)
+
 
 
 # CORREÇÃO POR EMPRESA

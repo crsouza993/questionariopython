@@ -234,22 +234,10 @@ def questionario_empresa(token):
 @app.route("/dashboard/<int:empresa_id>")
 def dashboard(empresa_id):
     tabela = gerar_correcao(empresa_id)
-    resumo = gerar_resumo_empresa(empresa_id)
 
-    if not resumo:
+    if not tabela:
         return "Sem dados para esta empresa", 404
 
-    return render_template(
-        "dashboard.html",
-        tabela=tabela,
-        resumo=resumo
-    )
-
-
-# CORREÇÃO POR EMPRESA
-@app.route("/correcao/<int:empresa_id>")
-def correcao(empresa_id):
-    tabela = gerar_correcao(empresa_id)
     resumo = gerar_resumo(tabela)
 
     return render_template(
@@ -257,6 +245,20 @@ def correcao(empresa_id):
         tabela=tabela,
         resumo=resumo
     )
+
+
+
+# CORREÇÃO POR EMPRESA
+#@app.route("/correcao/<int:empresa_id>")
+#def correcao(empresa_id):
+ #   tabela = gerar_correcao(empresa_id)
+  #  resumo = gerar_resumo(tabela)
+
+   # return render_template(
+    #    "dashboard.html",
+     #   tabela=tabela,
+      #  resumo=resumo
+    #)
 
 
 def gerar_resumo(tabela):

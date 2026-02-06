@@ -18,23 +18,6 @@
     }
 
     /* =========================
-       STATUS GERAL
-       ========================= */
-    .status-geral {
-      padding: 25px;
-      border-radius: 14px;
-      font-size: 26px;
-      font-weight: bold;
-      color: white;
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
-    .status-alto { background: #e74c3c; }
-    .status-moderado { background: #f1c40f; color: #333; }
-    .status-baixo { background: #2ecc71; }
-
-    /* =========================
        CARDS
        ========================= */
     s {
@@ -291,9 +274,9 @@ body {
     .risco-amarelo  .icone { background: #f1c40f; color: #333; }
     .risco-verde    .icone { background: #2ecc71; color: #fff; }
 
-    /* =========================
+/* =========================
    DIAGNÓSTICO EM DUAS COLUNAS
-   ========================= */
+========================= */
 .lista {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -338,6 +321,7 @@ body {
 .resumo-ranking h2 {
   margin-bottom: 15px;
 }
+
 /* =========================
    PRIORIDADES MAIS COMPACTAS
    ========================= */
@@ -365,6 +349,37 @@ body {
   align-items: flex-start;
 }
 
+
+/* =========================
+   AJUSTE FINAL PARA PDF
+   ========================= */
+@media print {
+
+  body {
+    zoom: 0.85; /* 🔥 faz tudo caber em 1 página */
+  }
+
+  /* evita quebra entre seções */
+  .status-geral,
+  .cards,
+  .linha,
+  .resumo-ranking,
+  .card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* remove sombras e fundos desnecessários */
+  .card,
+  .bloco {
+    box-shadow: none !important;
+  }
+}
+
+@page {
+  size: A4 landscape;
+  margin: 20mm;
+}
 
     /* =========================
        PRINT
@@ -551,10 +566,14 @@ body {
   <!-- COLUNA ESQUERDA -->
   <div class="coluna-esquerda">
 
-    <div class="bloco">
+<div class="grafico-pdf">
+  <div class="bloco">
       <h2>Média por Subescala</h2>
-      <canvas id="grafico"></canvas>
-    </div>
+    <div class="grafico-pdf">
+  <canvas id="grafico"></canvas>
+    </div>      
+    </div></div>
+
   </div>
 
 
@@ -603,39 +622,24 @@ body {
         <strong>Risco Baixo</strong> (0 – 2.0)
       </div>
     </div>
-
-   <div>
   <div class="risco-item">
-    <div class="risco-cor vermelho"></div>
-    {{ tabela | selectattr("media", ">=", 4.1) | list | length }}
-    Risco Muito Alto (4.1 – 5.0)
-  </div>
+    <div>
+  {% for item in tabela | sort(attribute='media', reverse=True) %}
+    {% if loop.index <= 5 %}
+      <div class="risco-item">
+        <div class="risco-cor
+          {% if item.media >= 4.1 %}vermelho
+          {% elif item.media >= 3.1 %}laranja
+          {% elif item.media >= 2.1 %}amarelo
+          {% else %}verde{% endif %}
+        "></div>
 
-  <div class="risco-item">
-    <div class="risco-cor laranja"></div>
-    {{ tabela
-       | selectattr("media", ">=", 3.1)
-       | selectattr("media", "<=", 4.0)
-       | list | length }}
-    Risco Alto (3.1 – 4.0)
-  </div>
-
-  <div class="risco-item">
-    <div class="risco-cor amarelo"></div>
-    {{ tabela
-       | selectattr("media", ">=", 2.1)
-       | selectattr("media", "<=", 3.0)
-       | list | length }}
-    Risco Moderado (2.1 – 3.0)
-  </div>
-
-  <div class="risco-item">
-    <div class="risco-cor verde"></div>
-    {{ tabela | selectattr("media", "<=", 2.0) | list | length }}
-    Risco Baixo (0 – 2.0)
-  </div>
+        <strong>{{ loop.index }}º</strong>
+        {{ item.subescala }} — {{ item.media }}
+      </div>
+    {% endif %}
+  {% endfor %}
 </div>
-
 
   </div>
 </div>
@@ -696,10 +700,43 @@ body {
 
 
 </div>
+</div>
+<br>
+<br>
+<div class="bloco" style="margin-bottom: 40px;">
+  <h2>Resumo Executivo</h2>
 
+  <p>
+    A análise dos riscos psicossociais, com base no questionário COPSOQ,
+    indica que a empresa apresenta um cenário geral de
+    <strong>
+      {% if resumo.risco_geral == 'Alto risco' %}
+        ALTO RISCO psicossocial
+      {% elif resumo.risco_geral == 'Risco moderado' %}
+        RISCO MODERADO psicossocial
+      {% else %}
+        BAIXO RISCO psicossocial
+      {% endif %}
+    </strong>.
+  </p>
 
+  <p>
+    Foram avaliadas <strong>{{ resumo.total_subescalas }}</strong> subescalas,
+    com média geral de <strong>{{ resumo.media_geral }}</strong>.
+  </p>
 
+  <p>
+    Destacam-se como <strong>prioridade de intervenção</strong> as subescalas
+    com médias mais elevadas, especialmente aquelas classificadas como
+    <strong>Alto Risco</strong>, pois representam maior impacto potencial
+    na saúde, bem-estar e desempenho dos colaboradores.
+  </p>
 
+  <p>
+    Recomenda-se a elaboração de um plano de ação focado inicialmente
+    nessas áreas críticas, seguido de monitoramento contínuo das
+    subescalas classificadas como risco moderado.
+  </p>
 </div>
 
 
@@ -731,8 +768,12 @@ new Chart(document.getElementById("grafico"), {
     }
   }
 });
+chart.resize(1400, 520);
+chart.resize();
+
 
 </script>
+<br>
 
 
 <button onclick="window.print()">📄 Exportar PDF</button>

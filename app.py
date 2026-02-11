@@ -93,6 +93,15 @@ def inicializar_banco():
         (41,'violencia_fisica','Violência física')
     """)
 
+    # 🔹 Criar empresa padrão se não existir
+    c.execute("SELECT id FROM empresas WHERE token = ?", ("demo1234",))
+    if not c.fetchone():
+        c.execute("""
+            INSERT INTO empresas (nome, token, data_criacao)
+            VALUES (?, ?, ?)
+        """, ("Empresa Demo", "demo1234", datetime.now().isoformat()))
+
+
     conn.commit()
     conn.close()
 

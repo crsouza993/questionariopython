@@ -4,9 +4,11 @@ import sqlite3
 import uuid
 import os
 
-
-app = Flask(__name__)
+from whitenoise import WhiteNoise
+app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = "sua_chave_super_secreta"
+app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/')
+
 
 # MAPA DAS DIMENSÕES
 # ===============================
@@ -592,3 +594,5 @@ if __name__ == "__main__":
     init_db()
     port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port)
+
+

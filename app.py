@@ -249,6 +249,16 @@ def gerar_resumo_executivo(ico, criticidade, resumo, alerta_critico):
 # ======================================================
 # 🔹 ROTAS
 # ======================================================
+@app.route('/wake')
+def wake():
+    try:
+        db.session.execute("SELECT 1")
+        return "DB awake", 200
+    except:
+        return "App awake", 200
+
+
+
 @app.route("/admin")
 def admin():
     conn = get_db()

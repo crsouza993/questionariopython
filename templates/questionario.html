@@ -16,7 +16,30 @@
         Não existem respostas certas ou erradas.
     </p>
 
-    <form method="post">
+{% if erro_validacao %}
+<div id="erro-validacao" style="
+    background:#ffe6e6;
+    color:#b30000;
+    padding:12px;
+    margin-bottom:20px;
+    border-radius:6px;
+    font-weight:bold;
+">
+    ⚠️ Existem perguntas não respondidas. Verifique antes de enviar.
+</div>
+{% endif %}
+
+
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div style="background:#ffe6e6; color:#b30000; padding:12px; margin-bottom:20px; border-radius:6px;">
+      {{ messages[0] }}
+    </div>
+  {% endif %}
+{% endwith %}
+
+    <form method="POST">
 
         <!-- LEGENDA PADRÃO -->
         <div class="legenda">
@@ -27,31 +50,32 @@
             <span>5 – Sempre</span>
         </div>
 
-        <!-- FUNÇÃO DE ESCALA -->
-        {% macro escala(pergunta) %}
-        <div class="escala">
-            <label>
-                <input type="radio" name="q{{ pergunta }}" value="1" required>
-                <span>1<br><small>Nunca / quase nunca</small></span>
-            </label>
-            <label>
-                <input type="radio" name="q{{ pergunta }}" value="2">
-                <span>2<br><small>Raramente</small></span>
-            </label>
-            <label>
-                <input type="radio" name="q{{ pergunta }}" value="3">
-                <span>3<br><small>Às vezes</small></span>
-            </label>
-            <label>
-                <input type="radio" name="q{{ pergunta }}" value="4">
-                <span>4<br><small>Frequentemente</small></span>
-            </label>
-            <label>
-                <input type="radio" name="q{{ pergunta }}" value="5">
-                <span>5<br><small>Sempre</small></span>
-            </label>
-        </div>
-        {% endmacro %}
+ <!-- FUNÇÃO DE ESCALA -->
+{% macro escala(pergunta) %}
+<div class="escala">
+    <label>
+        <input type="radio" name="q{{ pergunta }}" value="1">
+        <span>1<br><small>Nunca / quase nunca</small></span>
+    </label>
+    <label>
+        <input type="radio" name="q{{ pergunta }}" value="2">
+        <span>2<br><small>Raramente</small></span>
+    </label>
+    <label>
+        <input type="radio" name="q{{ pergunta }}" value="3">
+        <span>3<br><small>Às vezes</small></span>
+    </label>
+    <label>
+        <input type="radio" name="q{{ pergunta }}" value="4">
+        <span>4<br><small>Frequentemente</small></span>
+    </label>
+    <label>
+        <input type="radio" name="q{{ pergunta }}" value="5">
+        <span>5<br><small>Sempre</small></span>
+    </label>
+</div>
+{% endmacro %}
+
 
         <!-- BLOCO 1 -->
         <h2>Exigências do Trabalho</h2>
@@ -125,11 +149,11 @@
         <!-- BLOCO 6 -->
         <h2>Significado e Satisfação</h2>
         <div class="legenda">
-            <span>1 – Nada</span>
-            <span>2 – Um pouco</span>
-            <span>3 – Moderadamente</span>
-            <span>4 – Muito</span>
-            <span>5 – Extremamente</span>
+            <span>1 – Nunca / quase nunca</span>
+            <span>2 – Raramente</span>
+            <span>3 – Às vezes</span>
+            <span>4 – Frequentemente</span>
+            <span>5 – Sempre</span>
         </div>
         {% for i, texto in [
             (24,"O trabalho tem significado para si?"),
@@ -201,13 +225,70 @@
         {% endfor %}
 
         <button type="submit">Enviar Questionário</button>
+
     </form>
 
-    <p class="rodape">
-        COPSOQ II – Versão Curta | Avaliação Psicossocial – NR-01 | LGPD
+<p class="rodape">
+        COPSOQ II | Avaliação Psicossocial – NR-01 | LGPD
     </p>
 
 </div>
+<script>
+document.querySelector("form").addEventListener("submit", function(e) {
+
+    let totalPerguntas = 41;
+    let erro = false;
+
+    for (let i = 1; i <= totalPerguntas; i++) {
+
+        let radios = document.querySelectorAll(`input[name="q${i}"]`);
+        let select = document.querySelector(`select[name="q${i}"]`);
+
+        // Se for radio
+        if (radios.length > 0) {
+            let respondido = false;
+            radios.forEach(r => {
+                if (r.checked) respondido = true;
+            });
+
+            if (!respondido) {
+                erro = true;
+            }
+        }
+
+        // Se for select
+        if (select) {
+            if (select.value === "") {
+                erro = true;
+            }
+        }
+    }
+
+    if (erro) {
+        e.preventDefault();
+
+        let erroDiv = document.getElementById("erro-validacao");
+
+        // Se não existir, cria
+        if (!erroDiv) {
+            erroDiv = document.createElement("div");
+            erroDiv.id = "erro-validacao";
+            erroDiv.style.background = "#ffe6e6";
+            erroDiv.style.color = "#b30000";
+            erroDiv.style.padding = "12px";
+            erroDiv.style.marginBottom = "20px";
+            erroDiv.style.borderRadius = "6px";
+            erroDiv.style.fontWeight = "bold";
+            erroDiv.innerText = "⚠️ Existem perguntas não respondidas. Verifique antes de enviar.";
+
+            document.querySelector("form").prepend(erroDiv);
+        }
+
+        erroDiv.scrollIntoView({ behavior: "smooth" });
+    }
+});
+</script>
+
 
 </body>
 </html>

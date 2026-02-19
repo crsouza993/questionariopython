@@ -1,303 +1,584 @@
+from flask import Flask, render_template, request, redirect, url_for, abort
+from flask import flash
 import sqlite3
 import uuid
-from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for
+import os
+
 
 app = Flask(__name__)
-DATABASE = "copsoq.db"
+app.secret_key = "sua_chave_super_secreta"
 
-# =====================================================
-# CONEXÃO
-# =====================================================
-def conectar():
-    return sqlite3.connect(DATABASE)
+# MAPA DAS DIMENSÕES
+# ===============================
+MAPA_DIMENSOES = {
+    1: "Exigencias",
+    2: "Exigencias",
+    3: "Exigencias",
+    4: "Exigencias",
+    5: "Exigencias",
+    6: "Exigencias",
+
+    7: "Influencia",
+    8: "Influencia",
+    9: "Influencia",
+    10: "Influencia",
+
+    11: "Informacao",
+    12: "Informacao",
+    13: "Informacao",
+    14: "Informacao",
+    15: "Informacao",
+    16: "Informacao",
+
+    17: "Chefias",
+    18: "Chefias",
+    19: "Chefias",
+    20: "Chefias",
+    21: "Chefias",
+    22: "Chefias",
+
+    23: "Autoeficacia",
+
+    24: "satisfação",
+    25: "satisfação",
+    26: "satisfação",
+    27: "satisfação",
+    28: "satisfação",
+
+    29: "Saude",
+
+    30: "Impacto",
+    31: "Impacto",
+
+    32: "Sintomas",
+    33: "Sintomas",
+    34: "Sintomas",
+    35: "Sintomas",
+    36: "Sintomas",
+    37: "Sintomas",
+
+    38: "Assedio",
+    39: "Assedio",
+    40: "Assedio",
+    41: "Assedio"
+}
 
 
-# =====================================================
-# BANCO
-# =====================================================
-def inicializar_banco():
-    conn = conectar()
-    c = conn.cursor()
+DATABASE = "database.db"
 
-    c.execute("""
+# ======================================================
+# 🔹 CONEXÃO BANCO
+# ======================================================
+
+def get_db():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db():
+    conn = sqlite3.connect("database.db")
+
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS empresas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY,
             nome TEXT NOT NULL,
-            token TEXT UNIQUE NOT NULL,
-            data_criacao TEXT NOT NULL
+            limite_respostas INTEGER
         )
     """)
 
-    c.execute("""
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS respostas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            empresa_id INTEGER NOT NULL,
-            pergunta INTEGER NOT NULL,
-            resposta INTEGER NOT NULL,
-            data_hora TEXT NOT NULL,
+            empresa_id TEXT,
+            pergunta INTEGER,
+            dimensao TEXT,
+            valor INTEGER,
             FOREIGN KEY (empresa_id) REFERENCES empresas(id)
         )
     """)
 
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS mapeamento_copsoq (
-            pergunta INTEGER PRIMARY KEY,
-            subescala TEXT NOT NULL,
-            nome_subescala TEXT NOT NULL
-        )
-    """)
-
-    c.execute("""
-        INSERT OR IGNORE INTO mapeamento_copsoq (pergunta, subescala, nome_subescala) VALUES
-        (1,'exigencias_quantitativas','Exigências quantitativas'),
-        (2,'ritmo_trabalho','Ritmo de trabalho'),
-        (3,'exigencias_cognitivas','Exigências cognitivas'),
-        (4,'exigencias_emocionais','Exigências emocionais'),
-        (5,'exigencias_cognitivas','Exigências cognitivas'),
-        (6,'exigencias_emocionais','Exigências emocionais'),
-        (7,'influencia_trabalho','Influência no trabalho'),
-        (8,'influencia_trabalho','Influência no trabalho'),
-        (9,'desenvolvimento','Possibilidades de desenvolvimento'),
-        (10,'previsibilidade','Previsibilidade'),
-        (11,'reconhecimento','Reconhecimento'),
-        (12,'clareza_papeis','Clareza de papéis'),
-        (13,'reconhecimento','Reconhecimento'),
-        (14,'justica','Justiça'),
-        (15,'apoio_superior','Apoio social do superior'),
-        (16,'apoio_colegas','Apoio social de colegas'),
-        (17,'qualidade_lideranca','Qualidade da liderança'),
-        (18,'qualidade_lideranca','Qualidade da liderança'),
-        (19,'confianca_gestao','Confiança na gestão'),
-        (20,'confianca_gestao','Confiança na gestão'),
-        (21,'justica','Justiça'),
-        (22,'organizacao_trabalho','Organização do trabalho'),
-        (23,'autoeficacia','Autoeficácia'),
-        (24,'sentido_trabalho','Sentido do trabalho'),
-        (25,'sentido_trabalho','Sentido do trabalho'),
-        (26,'comprometimento','Comprometimento com o trabalho'),
-        (27,'satisfacao_trabalho','Satisfação no trabalho'),
-        (28,'inseguranca_emprego','Insegurança no emprego'),
-        (29,'saude_geral','Saúde geral'),
-        (30,'conflito_trabalho_familia','Conflito trabalho-família'),
-        (31,'conflito_trabalho_familia','Conflito trabalho-família'),
-        (32,'problemas_sono','Problemas de sono'),
-        (33,'exaustao_fisica','Exaustão física'),
-        (34,'exaustao_emocional','Exaustão emocional'),
-        (35,'irritabilidade','Irritabilidade'),
-        (36,'ansiedade','Ansiedade'),
-        (37,'depressao','Depressão'),
-        (38,'assedio_moral','Assédio moral'),
-        (39,'assedio_sexual','Assédio sexual'),
-        (40,'ameaca_violencia','Ameaça de violência'),
-        (41,'violencia_fisica','Violência física')
-    """)
-
-    # 🔹 Criar empresa padrão se não existir
-    c.execute("SELECT id FROM empresas WHERE token = ?", ("demo1234",))
-    if not c.fetchone():
-        c.execute("""
-            INSERT INTO empresas (nome, token, data_criacao)
-            VALUES (?, ?, ?)
-        """, ("Empresa Demo", "demo1234", datetime.now().isoformat()))
-
-
     conn.commit()
     conn.close()
 
 
-inicializar_banco()
+
+# ======================================================
+# 🔹 LÓGICA COPSOQ 2.0
+# ======================================================
+
+def calcular_score_0_100(valores):
+    media = sum(valores) / len(valores)
+    score = ((media - 1) / 4) * 100
+    return round(score, 2)
 
 
-# =====================================================
-# REGRAS
-# =====================================================
-def interpretar_risco(media):
-    if media <= 2:
-        return "Baixo risco"
-    elif media <= 3.5:
-        return "Risco moderado"
-    return "Alto risco"
+def classificar_dimensao(score, tipo):
+    if tipo == "risco":
+        if score <= 33:
+            return "baixo"
+        elif score <= 66:
+            return "moderado"
+        else:
+            return "alto"
+    else:  # proteção
+        if score <= 33:
+            return "alto"
+        elif score <= 66:
+            return "moderado"
+        else:
+            return "baixo"
 
 
-# =====================================================
-# SERVICE – CORREÇÃO
-# =====================================================
-def gerar_correcao(empresa_id):
-    conn = conectar()
-    c = conn.cursor()
+def peso_classificacao(classificacao):
+    pesos = {"alto": 3, "moderado": 2, "baixo": 1}
+    return pesos.get(classificacao, 1)
 
-    c.execute("""
-        SELECT 
-            m.nome_subescala,
-            ROUND(AVG(r.resposta), 2) AS media
-        FROM respostas r
-        JOIN mapeamento_copsoq m ON r.pergunta = m.pergunta
-        WHERE r.empresa_id = ?
-        GROUP BY m.nome_subescala
-        ORDER BY MIN(m.pergunta)
+
+def processar_dimensoes(empresa_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT dimensao, tipo, valor
+        FROM respostas
+        WHERE empresa_id = ?
     """, (empresa_id,))
 
-    dados = c.fetchall()
+    dados = cursor.fetchall()
     conn.close()
 
-    tabela = []
-    for nome, media in dados:
-        tabela.append({
-            "subescala": nome,
-            "media": media,
-            "risco": interpretar_risco(media)
+    if not dados:
+        return []
+
+    agrupado = {}
+
+    for row in dados:
+        nome = row["dimensao"]
+        tipo = row["tipo"]
+        valor = row["valor"]
+
+        if nome not in agrupado:
+            agrupado[nome] = {"tipo": tipo, "valores": []}
+
+        agrupado[nome]["valores"].append(valor)
+
+    dimensoes = []
+
+    for nome, dados in agrupado.items():
+        score = calcular_score_0_100(dados["valores"])
+        classificacao = classificar_dimensao(score, dados["tipo"])
+
+        dimensoes.append({
+            "nome": nome,
+            "tipo": dados["tipo"],
+            "score": score,
+            "classificacao": classificacao,
+            "peso": peso_classificacao(classificacao)
         })
 
-    return tabela
+    return dimensoes
 
 
+def calcular_ico(dimensoes):
+    if not dimensoes:
+        return 0, "baixa"
 
-# =====================================================
-# ROTAS
-# =====================================================
+    total = len(dimensoes)
+    soma_pesos = sum(d["peso"] for d in dimensoes)
 
-# ADMIN – criar empresas e pegar linksimport uuid
-@app.route("/admin", methods=["GET", "POST"])
+    ico = (soma_pesos / (total * 3)) * 100
+    ico = round(ico, 2)
+
+    if ico <= 40:
+        criticidade = "baixa"
+    elif ico <= 70:
+        criticidade = "moderada"
+    else:
+        criticidade = "alta"
+
+    return ico, criticidade
+
+
+# ALERTA CRITICO
+def verificar_alerta_critico(resultados):
+    """
+    resultados = {"exigencias": 72, "chefias": 55, ...}
+    """
+
+    alto_risco = [
+        nome for nome, score in resultados.items()
+        if score >= 70
+    ]
+
+    quantidade_alto = len(alto_risco)
+
+    # 🔴 Regra: 3 ou mais dimensões em alto risco
+    alerta_critico = quantidade_alto >= 3
+
+    return alerta_critico, alto_risco
+
+# RESUMO EXECUTIVO
+def gerar_resumo_executivo(ico, criticidade, resumo, alerta_critico):
+    
+    alto = resumo["alto"]
+    moderado = resumo["moderado"]
+    baixo = resumo["baixo"]
+
+    texto = f"O Índice Geral de Risco Psicossocial (ICo) da organização é {ico}, "
+    texto += f"classificado como criticidade {criticidade.lower()}. "
+
+    texto += f"Foram identificadas {alto} dimensões em alto risco, "
+    texto += f"{moderado} em nível moderado e {baixo} em nível baixo. "
+
+    if alerta_critico:
+        texto += (
+            "Observa-se uma concentração relevante de dimensões em alto risco, "
+            "caracterizando um cenário de alerta crítico que demanda atenção "
+            "estratégica e intervenção prioritária."
+        )
+    else:
+        texto += (
+            "Não foi identificada concentração crítica de dimensões em alto risco, "
+            "indicando um cenário relativamente estável, embora pontos específicos "
+            "possam requerer monitoramento."
+        )
+
+    return texto
+
+# ======================================================
+# 🔹 ROTAS
+# ======================================================
+@app.route("/admin")
 def admin():
-    conn = conectar()
-    c = conn.cursor()
-
-    erro = None
-
-    if request.method == "POST":
-        nome = request.form["nome"].strip()
-
-        # 🔍 verifica se empresa já existe
-        c.execute("SELECT id FROM empresas WHERE nome = ?", (nome,))
-        empresa_existente = c.fetchone()
-
-        if empresa_existente:
-            erro = "Empresa já cadastrada"
-        else:
-            token = uuid.uuid4().hex[:8]
-            data = datetime.now().isoformat()
-
-            c.execute("""
-                INSERT INTO empresas (nome, token, data_criacao)
-                VALUES (?, ?, ?)
-            """, (nome, token, data))
-
-            conn.commit()
-
-    c.execute("SELECT id, nome, token FROM empresas")
-    empresas = c.fetchall()
-
-    conn.close()
-    return render_template("admin.html", empresas=empresas, erro=erro)
-
-# EXCLUIR EMPRESA
-@app.route("/admin/excluir/<int:empresa_id>", methods=["POST"])
-def excluir_empresa(empresa_id):
-    conn = conectar()
-    c = conn.cursor()
-
-    # 1️⃣ apagar respostas da empresa
-    c.execute("DELETE FROM respostas WHERE empresa_id = ?", (empresa_id,))
-
-    # 2️⃣ apagar a empresa
-    c.execute("DELETE FROM empresas WHERE id = ?", (empresa_id,))
-
-    conn.commit()
+    conn = get_db()
+    empresas = conn.execute("SELECT * FROM empresas").fetchall()
     conn.close()
 
-    return redirect(url_for("admin"))
+    return render_template("admin.html", empresas=empresas)
 
-# QUESTIONÁRIO POR EMPRESA
-@app.route("/q/<token>", methods=["GET", "POST"])
-def questionario_empresa(token):
-    conn = conectar()
-    c = conn.cursor()
+# HOME → lista empresas
+@app.route("/", methods=["GET", "POST"])
+def home():
 
-    # busca empresa existente
-    c.execute("SELECT id, nome FROM empresas WHERE token = ?", (token,))
-    empresa = c.fetchone()
-
-    if not empresa:
-        return "Empresa não encontrada", 404
-
-    empresa_id = empresa[0]
+    conn = get_db()
 
     if request.method == "POST":
-        for i in range(1, 42):
-            resposta = request.form.get(f"q{i}")
-            if resposta:
-                c.execute("""
-                    INSERT INTO respostas (empresa_id, pergunta, resposta, data_hora)
-                    VALUES (?, ?, ?, datetime('now'))
-                """, (empresa_id, i, int(resposta)))
+
+        nome = request.form["nome"]   # ← corrigido
+        limite = request.form["limite_respostas"]
+
+        empresa_id = str(uuid.uuid4())[:8]
+
+        conn.execute("""
+            INSERT INTO empresas (id, nome, limite_respostas)
+            VALUES (?, ?, ?)
+        """, (empresa_id, nome, limite))
 
         conn.commit()
         conn.close()
-        return render_template("obrigado.html")
 
+        return redirect(url_for("home"))
+
+    empresas = conn.execute("SELECT * FROM empresas").fetchall()
     conn.close()
-    return render_template("questionario.html", empresa=empresa)
 
-# DASHBOARD
-@app.route("/dashboard/<int:empresa_id>")
-def dashboard(empresa_id):
-    tabela = gerar_correcao(empresa_id)
+    return render_template("admin.html", empresas=empresas)
 
-    if not tabela:
-        return "Sem dados para esta empresa", 404
 
-    resumo = gerar_resumo(tabela)
+# CRIAR EMPRESA
+@app.route("/criar_empresa", methods=["GET", "POST"])
+def criar_empresa():
 
+    if request.method == "POST":
+
+        nome = request.form["nome"]
+        limite_respostas = request.form["limite_respostas"]
+
+        conn = get_db()
+        conn.execute("""
+            INSERT INTO empresas (id, nome, limite_respostas)
+            VALUES (?, ?, ?)
+        """, (
+            str(uuid.uuid4())[:8],
+            nome,
+            limite_respostas
+        ))
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for("home"))
+    return render_template("nova_empresa.html")
+
+
+
+
+## ABRIR QUESTIONÁRIO
+@app.route("/empresa/<empresa_id>", methods=["GET", "POST"])
+def questionario(empresa_id):
+
+    conn = get_db()
+
+    empresa = conn.execute("""
+        SELECT * FROM empresas WHERE id = ?
+    """, (empresa_id,)).fetchone()
+
+    total_respostas = conn.execute("""
+        SELECT COUNT(*) FROM respostas WHERE empresa_id = ?
+    """, (empresa_id,)).fetchone()[0]
+
+    respondentes = total_respostas // 41 if total_respostas else 0
+    limite = empresa["limite_respostas"] if empresa["limite_respostas"] else 0
+
+    if limite > 0 and respondentes >= limite:
+        conn.close()
+        return render_template("encerrado.html")
+
+    # 🔥 SÓ EXECUTA VALIDAÇÃO E SALVAMENTO SE FOR POST
+    if request.method == "POST":
+
+        total_perguntas = 41
+        erro_validacao = False
+
+        # 🔐 VALIDAÇÃO BACK-END
+        for i in range(1, total_perguntas + 1):
+            if not request.form.get(f"q{i}"):
+                erro_validacao = True
+                break
+
+        if erro_validacao:
+            conn.close()
+            return render_template(
+                "questionario.html",
+                empresa=empresa,
+                erro_validacao=True
+            )
+
+        # 🔽 Só salva se passou na validação
+        for i in range(1, 42):
+            valor = request.form.get(f"q{i}")
+
+            if valor:
+                conn.execute("""
+                    INSERT INTO respostas (empresa_id, pergunta, dimensao, valor)
+                    VALUES (?, ?, ?, ?)
+                """, (
+                    empresa_id,
+                    i,
+                    MAPA_DIMENSOES.get(i),
+                    int(valor)
+                ))
+
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for("obrigado"))
+
+    # 🔥 SE FOR GET → MOSTRA O QUESTIONÁRIO SEM ERRO
+    conn.close()
     return render_template(
-        "dashboard.html",
-        tabela=tabela,
-        resumo=resumo
+        "questionario.html",
+        empresa=empresa,
+        erro_validacao=False
     )
 
 
 
-# CORREÇÃO POR EMPRESA
-#@app.route("/correcao/<int:empresa_id>")
-#def correcao(empresa_id):
- #   tabela = gerar_correcao(empresa_id)
-  #  resumo = gerar_resumo(tabela)
-
-   # return render_template(
-    #    "dashboard.html",
-     #   tabela=tabela,
-      #  resumo=resumo
-    #)
-
-
-def gerar_resumo(tabela):
-    total_subescalas = len(tabela)
-
-    media_geral = round(
-        sum(item["media"] for item in tabela) / total_subescalas, 2
-    ) if total_subescalas > 0 else 0
-
-    if media_geral <= 2:
-        risco_geral = "Baixo risco"
-    elif media_geral <= 3.5:
-        risco_geral = "Risco moderado"
-    else:
-        risco_geral = "Alto risco"
-
-    return {
-        "total_subescalas": total_subescalas,
-        "media_geral": media_geral,
-        "risco_geral": risco_geral
-    }
-
-
 @app.route("/obrigado")
 def obrigado():
-    return "<h2>Obrigado! Questionário enviado com sucesso.</h2>"
+    return render_template("obrigado.html")
+
+# ENVIAR QUESTIONÁRIO
+@app.route("/enviar_questionario/<empresa_id>", methods=["POST"])
+def enviar_questionario(empresa_id):
+
+    conn = get_db()
+
+    # Mapeamento das perguntas por dimensão
+    mapa_dimensoes = {
+        "exigencias": range(1,7),
+        "influencia": range(7,11),
+        "apoio": range(11,17),
+        "lideranca": range(17,23),
+        "autoeficacia": [23],
+        "satisfação": range(24,29),
+        "saude_geral": [29],
+        "vida_privada": range(30,32),
+        "saude_mental": range(32,38),
+        "assedio": range(38,42)
+    }
+
+    # Tipo da dimensão
+    tipo_dimensao = {
+        "exigencias": "risco",
+        "saude_geral": "risco",
+        "vida_privada": "risco",
+        "saude_mental": "risco",
+        "assedio": "risco",
+        "influencia": "protecao",
+        "apoio": "protecao",
+        "lideranca": "protecao",
+        "autoeficacia": "protecao",
+        "satisfação": "protecao"
+    }
+
+    for dimensao, perguntas in mapa_dimensoes.items():
+
+        valores = []
+
+        for numero in perguntas:
+            valor = request.form.get(f"q{numero}")
+            if valor:
+                valores.append(int(valor))
+
+        if valores:
+            media = sum(valores) / len(valores)
+
+            conn.execute("""
+                INSERT INTO respostas (empresa_id, dimensao, tipo, valor)
+                VALUES (?, ?, ?, ?)
+            """, (empresa_id, dimensao, tipo_dimensao[dimensao], media))
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("dashboard", empresa_id=empresa_id))
 
 
-# =====================================================
-# START
-# =====================================================
+
+@app.route("/dashboard/<empresa_id>")
+def dashboard(empresa_id):
+
+    conn = get_db()
+
+    empresa = conn.execute("""
+        SELECT * FROM empresas WHERE id = ?
+    """, (empresa_id,)).fetchone()
+
+    respostas = conn.execute("""
+        SELECT * FROM respostas
+        WHERE empresa_id = ?
+    """, (empresa_id,)).fetchall()
+
+    # ===============================
+    # TOTAL DE RESPONDENTES
+    # ===============================
+    total_registros = len(respostas)
+    respondentes = total_registros // 41 if total_registros else 0
+
+    limite = empresa["limite_respostas"] if empresa["limite_respostas"] else 0
+
+    # ===============================
+    # TAXA DE ADESÃO
+    # ===============================
+    if limite > 0:
+        taxa_adesao = round((respondentes / limite) * 100, 1)
+    else:
+        taxa_adesao = 0
+
+    # ===============================
+    # AGRUPAR DIMENSÕES
+    # ===============================
+    dimensoes = {}
+
+    for r in respostas:
+        dim = r["dimensao"]
+        valor = r["valor"]
+
+        if dim not in dimensoes:
+            dimensoes[dim] = []
+
+        dimensoes[dim].append(valor)
+
+    # ===============================
+    # SCORE 0–100
+    # ===============================
+    resultados = {}
+    alto = 0
+    moderado = 0
+    baixo = 0
+
+    for dim, valores in dimensoes.items():
+
+        media = sum(valores) / len(valores)
+        score = ((media - 1) / 4) * 100
+        score = round(score, 1)
+
+        resultados[dim] = score
+
+        if score >= 70:
+            alto += 1
+        elif score >= 40:
+            moderado += 1
+        else:
+            baixo += 1
+
+    total_dimensoes = len(resultados)
+
+    # ===============================
+    # ICO
+    # ===============================
+    if resultados:
+        ico = round(sum(resultados.values()) / total_dimensoes, 1)
+    else:
+        ico = 0
+
+    # ===============================
+    # CRITICIDADE BASEADA NO ICO
+    # ===============================
+    if ico < 40:
+        criticidade = "Baixa"
+    elif ico < 70:
+        criticidade = "Moderada"
+    else:
+        criticidade = "Alta"
+
+    # ===============================
+    # RESUMO
+    # ===============================
+    resumo = {
+        "alto": alto,
+        "moderado": moderado,
+        "baixo": baixo
+    }
+
+    # ===============================
+    # ALERTA CRÍTICO (CONCENTRAÇÃO)
+    # ===============================
+    alerta_critico, dimensoes_alto_risco = verificar_alerta_critico(resultados)
+
+    # ===============================
+    # RESUMO EXECUTIVO
+    # ===============================
+    resumo_executivo = gerar_resumo_executivo(
+        ico,
+        criticidade,
+        resumo,
+        alerta_critico
+    )
+    
+    conn.close()
+
+    return render_template(
+        "dashboard.html",
+        empresa=empresa,
+        respondentes=respondentes,
+        limite=limite,
+        taxa_adesao=taxa_adesao,
+        resumo=resumo,
+        criticidade=criticidade,
+        ico=ico,
+        resultados=resultados,
+        alerta_critico=alerta_critico,
+        dimensoes_alto_risco=dimensoes_alto_risco,
+        resumo_executivo=resumo_executivo
+    )
+
+# ======================================================
+# 🔹 EXECUÇÃO
+# ======================================================
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    init_db()
+    port = int(os.environ.get("PORT", 5001))
+    app.run(host="0.0.0.0", port=port)

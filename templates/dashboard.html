@@ -1,786 +1,224 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard COPSOQ</title>
+    <meta charset="UTF-8">
+    <title>Dashboard COPSOQ</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 30px;
+        }
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      padding: 30px;
-    }
+        h1, h2, h3 {
+            margin-bottom: 10px;
+        }
 
-    h1 {
-      margin-bottom: 30px;
-    }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
 
-    /* =========================
-       CARDS
-       ========================= */
-    s {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margi.cardn-bottom: 40px;
-    }
+        .cards {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
 
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,.1);
-      text-align: center;
-    }
+        .card {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+            text-align: center;
+        }
 
-    .card h3 {
-      margin-bottom: 10px;
-      color: #555;
-      font-size: 16px;
-    }
+        .card h3 {
+            margin-bottom: 5px;
+            font-size: 16px;
+            color: #555;
+        }
 
-    .card strong {
-      font-size: 32px;
-    }
+        .card p {
+            font-size: 24px;
+            font-weight: bold;
+        }
 
-    /* =========================
-       LAYOUT EM LINHA
-       ========================= */
-    .linha {
-      display: grid;
-      grid-template-columns: 1.3fr 1fr;
-      gap: 30px;
-      margin-bottom: 40px;
-    }
+        .alta { color: #c62828; }
+        .moderada { color: #f9a825; }
+        .baixa { color: #2e7d32; }
 
-    .bloco {
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,.1);
-    }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin-bottom: 30px;
+        }
 
-    .lista div {
-      padding: 14px;
-      margin-bottom: 12px;
-      border-left: 8px solid;
-      border-radius: 6px;
-      background: #fafafa;
-    }
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
 
-    .baixo { border-color: #2ecc71; }
-    .moderado { border-color: #f1c40f; }
-    .alto { border-color: #e74c3c; }
+        th {
+            background: #f0f2f5;
+        }
 
-/* =========================
-   LEGENDA DE CORES
-   ========================= */
-.legenda {
-  background: white;
-  padding: 22px 26px;
-  border-radius: 14px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.1);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        .analise {
+            white-space: pre-line;
+            line-height: 1.6;
+        }
+ /* Linha Alto Risco */
+.alto {
+    background-color: #f8d7da;  /* vermelho claro */
 }
 
-.legenda-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 17px;
-  font-weight: 600;
-  white-space: nowrap;
+/* Linha Moderado */
+.moderado {
+    background-color: #fff3cd;  /* amarelo claro */
 }
 
-.legenda-cor {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  flex-shrink: 0;
+/* Linha Baixo */
+.baixo {
+    background-color: #d4edda;  /* verde claro */
+}
+.card-critico {
+    border-left: 6px solid #cc0000;
+    background-color: #ffe6e6;
 }
 
-.cor-alto { background: #e74c3c; }
-.cor-moderado { background: #f1c40f; }
-.cor-baixo { background: #2ecc71; }
-body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      padding: 30px;
-    }
-
-    h1 {
-      margin-bottom: 30px;
-    }
-
-    /* =========================
-       STATUS GERAL
-       ========================= */
-    .status-geral {
-      padding: 25px;
-      border-radius: 14px;
-      font-size: 26px;
-      font-weight: bold;
-      color: white;
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
-    .status-alto { background: #e74c3c; }
-    .status-moderado { background: #f1c40f; color: #333; }
-    .status-baixo { background: #2ecc71; }
-
-/* ===== RESUMO GERAL ===== */
-.resumo-ranking {
-  background: white;
-  padding: 30px;
-  border-radius: 14px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.08);
-  margin-top: 40px;
-}
-
-.resumo-ranking h2 {
-  margin-bottom: 25px;
-}
-
-.resumo-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-}
-
-.risco-item {
-  display: flex;
-  align-items: center;
-  font-size: 18px;
-  margin-bottom: 18px;
-}
-
-.risco-cor {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  margin-right: 14px;
-}
-
-.vermelho { background: #e74c3c; }
-.laranja  { background: #e67e22; }
-.amarelo  { background: #f1c40f; }
-.verde    { background: #2ecc71; }
-
-
-    /* =========================
-       CARDS RESUMO
-       ========================= */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margin-bottom: 40px;
-    }
-
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,.1);
-      text-align: center;
-    }
-
-    .card h3 {
-      margin-bottom: 10px;
-      color: #555;
-      font-size: 16px;
-    }
-
-    .card strong {
-      font-size: 32px;
-    }
-
-    /* =========================
-       LAYOUT
-       ========================= */
-    .linha {
-      display: grid;
-      grid-template-columns: 1.3fr 1fr;
-      gap: 30px;
-      margin-bottom: 40px;
-    }
-
-    .bloco {
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,.1);
-      margin-bottom: 30px;
-    }
-
-    .lista div {
-      padding: 14px;
-      margin-bottom: 12px;
-      border-left: 8px solid;
-      border-radius: 6px;
-      background: #fafafa;
-    }
-
-    .baixo { border-color: #2ecc71; }
-    .moderado { border-color: #f1c40f; }
-    .alto { border-color: #e74c3c; }
-
-    /* =========================
-       PRIORIDADES (CORRETO)
-       ========================= */
-    .prioridade-linha {
-      display: flex;
-      gap: 16px;
-      padding: 14px 18px;
-      border-radius: 10px;
-      margin-bottom: 14px;
-      background: #fff;
-      border: 1px solid #eee;
-    }
-
-    .icone {
-      min-width: 56px;
-      height: 36px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-    }
-
-    .texto strong {
-      display: block;
-      font-size: 16px;
-      margin-bottom: 6px;
-    }
-
-    .texto ul {
-      margin: 0;
-      padding-left: 18px;
-    }
-
-    .texto li {
-      font-size: 14px;
-      margin-bottom: 4px;
-    }
-
-    .risco-vermelho .icone { background: #e74c3c; color: #fff; }
-    .risco-laranja  .icone { background: #e67e22; color: #fff; }
-    .risco-amarelo  .icone { background: #f1c40f; color: #333; }
-    .risco-verde    .icone { background: #2ecc71; color: #fff; }
-
-/* =========================
-   DIAGNÓSTICO EM DUAS COLUNAS
-========================= */
-.lista {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px 20px;
-}
-
-/* Garante que cada item não quebre no PDF */
-.item-diagnostico {
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
-
-/* No print continua em duas colunas */
-@media print {
-  .lista {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-/* =========================
-   AJUSTE DE ALTURA DOS CARDS
-   ========================= */
-
-/* Cards principais */
-.resumo-ranking,
-.card {
-  padding: 20px !important;
-}
-
-/* Grid do resumo */
-.resumo-grid {
-  align-items: start;
-}
-
-/* Itens de risco mais compactos */
-.risco-item {
-  margin-bottom: 10px;
-  font-size: 16px;
-}
-
-/* Remove sobra vertical */
-.resumo-ranking h2 {
-  margin-bottom: 15px;
-}
-
-/* =========================
-   PRIORIDADES MAIS COMPACTAS
-   ========================= */
-
-.priority {
-  padding: 14px 16px;
-  margin-bottom: 10px;
-}
-
-.priority ul {
-  margin-top: 6px;
-  margin-bottom: 0;
-}
-
-.priority li {
-  margin: 2px 0;
-  font-size: 14px;
-}
-
-.priority .header {
-  font-size: 16px;
-}
-.linha,
-.resumo-grid {
-  align-items: flex-start;
+.card-normal {
+    border-left: 6px solid #2e7d32;
+    background-color: #e8f5e9;
 }
 
 
-/* =========================
-   AJUSTE FINAL PARA PDF
-   ========================= */
-@media print {
-
-  body {
-    zoom: 0.85; /* 🔥 faz tudo caber em 1 página */
-  }
-
-  /* evita quebra entre seções */
-  .status-geral,
-  .cards,
-  .linha,
-  .resumo-ranking,
-  .card {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  /* remove sombras e fundos desnecessários */
-  .card,
-  .bloco {
-    box-shadow: none !important;
-  }
-}
-
-@page {
-  size: A4 landscape;
-  margin: 20mm;
-}
-
-    /* =========================
-       PRINT
-       ========================= */
-    @media print {
-      * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-
-      body {
-        background: white;
-        padding: 0;
-      }
-
-      button {
-        display: none;
-      }
-
-      .card,
-      .bloco,
-      .status-geral {
-        box-shadow: none;
-      }
-    }
-.grid-dashboard {
-  display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: 30px;
-  align-items: start;
-}
-/* =========================
-   AJUSTE A4 – FORÇAR 1 PÁGINA
-   ========================= */
-@media print {
-
-  @page {
-    size: A4 portrait;
-    margin: 12mm;
-  }
-
-  body {
-    zoom: 0.85; /* CHAVE para caber tudo */
-  }
-
-  /* Evita que blocos quebrem */
-  .status-geral,
-  .bloco,
-  .resumo-ranking,
-  .prioridade-linha,
-  .legenda {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  /* Diagnóstico nunca quebra item */
-  .item-diagnostico {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  /* Grid principal não quebra */
-  .grid-dashboard {
-    break-inside: avoid;
-  }
-
-  /* Gráfico mais compacto */
-  canvas {
-    max-height: 280px !important;
-  }
-
-  /* Reduz espaçamentos verticais */
-  h1 {
-    margin-bottom: 12px;
-  }
-
-  h2 {
-    margin-bottom: 10px;
-  }
-
-  .bloco {
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-
-  .resumo-ranking {
-    padding: 16px;
-    margin-top: 16px;
-  }
-
-  .prioridade-linha {
-    padding: 10px 12px;
-    margin-bottom: 8px;
-  }
-
-  .lista div {
-    padding: 10px;
-    margin-bottom: 8px;
-  }
-
-  /* Remove sombras no PDF */
-  * {
-    box-shadow: none !important;
-  }
-
-  /* Botão não aparece */
-  button {
-    display: none !important;
-  }
-}
-/* Na tela */
-.grafico-container.pdf {
-  display: none;
-}
-  </style>
+    </style>
 </head>
 
 <body>
 
-<h1>Dashboard de Riscos Psicossociais – COPSOQ</h1>
+<div class="container">
 
-{% if tabela|length == 0 %}
-  <div class="status-geral status-moderado">
-    ⚠️ Ainda não há respostas suficientes para gerar o diagnóstico
-  </div>
-{% else %}
+    <h1>Dashboard de Riscos Psicossociais – COPSOQ</h1>
+    <h3>Empresa: {{ empresa["nome"] }}</h3>
 
-  {% set media_geral = (tabela | map(attribute='media') | sum / tabela|length) %}
+    <!-- ================= CARDS ================= -->
+    <div class="cards">
 
-  {% if media_geral > 3.5 %}
-    <div class="status-geral status-alto">
-      🟥 Empresa em <strong>ALTO RISCO</strong> psicossocial
+    <div class="card">
+        <p>Convidados: {{ limite }} 
+        Respondentes: {{ respondentes }} 
+        | Adesão: {{ taxa_adesao }}%</p>
     </div>
-  {% elif media_geral > 2 %}
-    <div class="status-geral status-moderado">
-      🟨 Empresa em <strong>RISCO MODERADO</strong> psicossocial
-    </div>
-  {% else %}
-    <div class="status-geral status-baixo">
-      🟩 Empresa em <strong>BAIXO RISCO</strong> psicossocial
-    </div>
-  {% endif %}
+<div class="card {% if alerta_critico %}card-critico{% else %}card-normal{% endif %}">
+    <h3>🚨 Alerta Crítico</h3>
 
-{% endif %}
-
-<!-- =========================
-     CARDS RESUMO
-     ========================= -->
-<div class="cards">
-  <div class="card">
-    <h3>Subescalas avaliadas</h3>
-    <strong>{{ tabela|length }}</strong>
-  </div>
-
-  <div class="card">
-    <h3>Média geral</h3>
-    <strong>
-      {% if tabela|length > 0 %}
-        {{ media_geral | round(2) }}
-      {% else %}
-        —
-      {% endif %}
-    </strong>
-  </div>
-
-<div class="legenda">
-  <div class="legenda-item">
-    <div class="legenda-cor cor-alto"></div>
-    Empresa em <strong>ALTO RISCO</strong> psicossocial
-  </div>
-
-  <div class="legenda-item">
-    <div class="legenda-cor cor-moderado"></div>
-    Empresa em <strong>RISCO MODERADO</strong> psicossocial
-  </div>
-
-  <div class="legenda-item">
-    <div class="legenda-cor cor-baixo"></div>
-   Empresa em <strong>BAIXO RISCO</strong> psicossocial
-  </div>
-</div>
-</div>
-
-  <!-- COLUNA ESQUERDA -->
-  <div class="coluna-esquerda">
-
-<div class="grafico-pdf">
-  <div class="bloco">
-      <h2>Média por Subescala</h2>
-    <div class="grafico-pdf">
-  <canvas id="grafico"></canvas>
-    </div>      
-    </div></div>
-
-  </div>
-
-
-  <!-- COLUNA DIREITA -->
-  <div class="bloco diagnostico-print">
-    <h2>Diagnóstico por Subescala</h2>
-
-    <div class="lista">
-      {% for item in tabela %}
-        <div class="item-diagnostico
-          {% if item.risco == 'Baixo risco' %}baixo
-          {% elif item.risco == 'Risco moderado' %}moderado
-          {% else %}alto{% endif %}
-        ">
-          <strong>{{ item.subescala }}</strong><br>
-          Média: {{ item.media }} — {{ item.risco }}
-        </div>
-      {% endfor %}
-    </div>
-    
-  </div>
-  
-<div class="resumo-ranking">
-  <h2>Resumo Geral – Ranking das Subescalas</h2>
-
-  <div class="resumo-grid">
-
-    <div>
-      <div class="risco-item">
-        <div class="risco-cor vermelho"></div>
-        <strong>Risco Muito Alto</strong> (4.1 – 5.0)
-      </div>
-
-      <div class="risco-item">
-        <div class="risco-cor laranja"></div>
-        <strong>Risco Alto</strong> (3.1 – 4.0)
-      </div>
-
-      <div class="risco-item">
-        <div class="risco-cor amarelo"></div>
-        <strong>Risco Moderado</strong> (2.1 – 3.0)
-      </div>
-
-      <div class="risco-item">
-        <div class="risco-cor verde"></div>
-        <strong>Risco Baixo</strong> (0 – 2.0)
-      </div>
-    </div>
-  <div class="risco-item">
-    <div>
-  {% for item in tabela | sort(attribute='media', reverse=True) %}
-    {% if loop.index <= 5 %}
-      <div class="risco-item">
-        <div class="risco-cor
-          {% if item.media >= 4.1 %}vermelho
-          {% elif item.media >= 3.1 %}laranja
-          {% elif item.media >= 2.1 %}amarelo
-          {% else %}verde{% endif %}
-        "></div>
-
-        <strong>{{ loop.index }}º</strong>
-        {{ item.subescala }} — {{ item.media }}
-      </div>
+    {% if alerta_critico %}
+        <p class="alta">ATIVO</p>
+        <small>{{ resumo.alto }} dimensões em alto risco</small>
+    {% else %}
+        <p class="baixa">Normal</p>
+        <small>{{ resumo.alto }} dimensões em alto risco</small>
     {% endif %}
-  {% endfor %}
 </div>
 
-  </div>
-</div>
-<br>
-<div class="bloco">
-  <h2>Prioridades de Intervenção</h2>
 
-  <div class="prioridade-linha risco-vermelho">
-    <div class="icone">🔥🔥</div>
-    <div class="texto">
-      <strong>Intervenção imediata </strong>
-    <ul>
-    {% for i in tabela if i.media > 4 %}
-    <li>{{ i.subescala }}</li>
+        <div class="card">
+            <h3>Risco Ocupacional</h3>
+            <p class="
+                {% if criticidade == 'alta' %}alta
+                {% elif criticidade == 'moderada' %}moderada
+                {% else %}baixa
+                {% endif %}
+            ">
+                {{ criticidade|upper }} (ICO: {{ ico }})
+            </p>
+        </div>
+
+    </div>
+
+    <!-- ================= RESUMO GERAL ================= -->
+    <div class="section">
+        <h2>Resumo Geral – Ranking das Dimensões</h2>
+
+        <p>
+            Alto risco: <strong>{{ resumo.alto }}</strong> |
+            Moderado: <strong>{{ resumo.moderado }}</strong> |
+            Baixo: <strong>{{ resumo.baixo }}</strong>
+        </p>
+    </div>
+
+    <!-- ================= MATRIZ ================= -->
+    <div class="section">
+        <h2>Matriz de Risco por Dimensão</h2>
+
+        <table>
+    <thead>
+        <tr>
+            <th>Dimensão</th>
+            <th>Score (0–100)</th>
+            <th>Classificação</th>
+        </tr>
+    </thead>
+ <tbody>
+    {% for dim, score in resultados.items() %}
+
+        {% if score >= 70 %}
+            {% set classe = "alto" %}
+            {% set texto = "ALTO" %}
+        {% elif score >= 40 %}
+            {% set classe = "moderado" %}
+            {% set texto = "MODERADO" %}
+        {% else %}
+            {% set classe = "baixo" %}
+            {% set texto = "BAIXO" %}
+        {% endif %}
+
+        <tr class="{{ classe }}">
+            <td>{{ dim }}</td>
+            <td>{{ score }}</td>
+            <td>{{ texto }}</td>
+        </tr>
+
     {% endfor %}
-    </ul>
-    </div>
-  </div>
+</tbody>
 
-  <div class="prioridade-linha risco-laranja">
-    <div class="icone">⚠️</div>
-    <div class="texto">
-      <strong>Plano de ação </strong>
-    <ul>
-    {% for i in tabela if i.media > 3 and i.media <= 4 %}
-  <li>{{ i.subescala }}</li>
-    {% endfor %}
-    </ul>
-
-    </div>
-  </div>
-
-  <div class="prioridade-linha risco-amarelo">
-    <div class="icone">👀</div>
-    <div class="texto">
-      <strong>Monitorar </strong>
-      <ul>
-    {% for i in tabela if i.media > 2 and i.media <= 3 %}
-    <li>{{ i.subescala }}</li>
-    {% endfor %}
-    </ul>
-    </div>
-  </div>
-
-  <div class="prioridade-linha risco-verde">
-    <div class="icone">✅</div>
-    <div class="texto">
-      <strong>Manter </strong>
-      <ul>
-{% for i in tabela if i.media <= 2 %}
-  <li>{{ i.subescala }}</li>
-{% endfor %}
-</ul>
-
-    </div>
-  </div>
-</div>
-
+</table>
 
 </div>
 </div>
-<br>
-<br>
-<div class="bloco" style="margin-bottom: 40px;">
-  <h2>Resumo Executivo</h2>
+<div style="
+    margin-top:40px;
+    padding:25px;
+    background:#f4f6f9;
+    border-radius:10px;
+    line-height:1.6;
+">
 
-  <p>
-    A análise dos riscos psicossociais, com base no questionário COPSOQ,
-    indica que a empresa apresenta um cenário geral de
-    <strong>
-      {% if resumo.risco_geral == 'Alto risco' %}
-        ALTO RISCO psicossocial
-      {% elif resumo.risco_geral == 'Risco moderado' %}
-        RISCO MODERADO psicossocial
-      {% else %}
-        BAIXO RISCO psicossocial
-      {% endif %}
-    </strong>.
-  </p>
+    <h3>📊 Resumo Executivo</h3>
 
-  <p>
-    Foram avaliadas <strong>{{ resumo.total_subescalas }}</strong> subescalas,
-    com média geral de <strong>{{ resumo.media_geral }}</strong>.
-  </p>
+    <p>
+        {{ resumo_executivo }}
+    </p>
 
-  <p>
-    Destacam-se como <strong>prioridade de intervenção</strong> as subescalas
-    com médias mais elevadas, especialmente aquelas classificadas como
-    <strong>Alto Risco</strong>, pois representam maior impacto potencial
-    na saúde, bem-estar e desempenho dos colaboradores.
-  </p>
-
-  <p>
-    Recomenda-se a elaboração de um plano de ação focado inicialmente
-    nessas áreas críticas, seguido de monitoramento contínuo das
-    subescalas classificadas como risco moderado.
-  </p>
 </div>
-
-
-<script>
-const dados = {{ tabela | tojson }};
-
-const labels = dados.map(d => d.subescala);
-const medias = dados.map(d => d.media);
-const cores = dados.map(d => {
-  if (d.risco === "Baixo risco") return "#2ecc71";
-  if (d.risco === "Risco moderado") return "#f1c40f";
-  return "#e74c3c";
-});
-
-new Chart(document.getElementById("grafico"), {
-  type: "bar",
-  data: {
-    labels: labels,
-    datasets: [{
-      data: medias,
-      backgroundColor: cores
-    }]
-  },
-  options: {
-    indexAxis: 'y',
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { min: 0, max: 5 }
-    }
-  }
-});
-chart.resize(1400, 520);
-chart.resize();
-
-
-</script>
-<br>
-
-
-<button onclick="window.print()">📄 Exportar PDF</button>
-
-
-
-
 
 </body>
 </html>

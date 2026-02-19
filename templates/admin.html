@@ -5,32 +5,52 @@
     <title>Admin - Empresas</title>
 </head>
 <body>
-    <h2>Cadastrar empresa</h2>
 
-    <form method="post">
-        <input type="text" name="nome" placeholder="Nome da empresa" required>
-        <button type="submit">Criar</button>
+<h2>Cadastrar nova empresa</h2>
+ <form method="POST">
+
+    <label>Nome da Empresa:</label>
+    <input type="text" name="nome" required>
+
+    <label>Quantidade de convidados:</label>
+    <input type="number" name="limite_respostas" min="1" required>
+
+    <button type="submit">Criar Empresa</button>
+
+</form>
+        <label>Limite máximo de respostas:</label>
+        <input type="number" name="limite_respostas" required>
+
     </form>
+
+    <hr>
 
     <h3>Empresas cadastradas</h3>
-    <ul>
-{% for id, nome, token in empresas %}
-  <li>
-    <strong>{{ nome }}</strong><br>
 
-    Questionário:
-    <a href="/q/{{ token }}">/q/{{ token }}</a><br>
+    {% if empresas %}
+        <ul>
+        {% for empresa in empresas %}
+            <li>
+                <strong>{{ empresa["nome"] }}</strong><br><br>
 
-    Correção:
-    <a href="/dashboard/{{ id }}">/dashboard/{{ id }}</a><br>
+                <!-- AQUI abre o questionário -->
+               <a href="{{ url_for('questionario', empresa_id=empresa['id']) }}">
+                    📝 Aplicar Questionário
+                </a>
 
-    <form action="/admin/excluir/{{ id }}" method="post" style="margin-top:5px;">
-      <button type="submit" onclick="return confirm('Excluir esta empresa?')">
-        🗑 Excluir
-      </button>
-    </form>
-  </li>
-{% endfor %}
-</ul>
+                <br><br>
+                <!-- AQUI abre o dashboard -->
+                <a href="{{ url_for('dashboard', empresa_id=empresa['id']) }}">
+                    📊 Ver Dashboard
+                </a>
+
+            </li>
+            <hr>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Nenhuma empresa cadastrada ainda.</p>
+    {% endif %}
+
 </body>
 </html>
